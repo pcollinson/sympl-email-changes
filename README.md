@@ -47,3 +47,26 @@ The file that needs replacing is:
 /etc/exim4/sympl.d/00-main/50-tls-options
 ```
 
+## Exim - ch4 - replace 'ident' suppression by approved recipe
+
+While we are changing distributed files, it seems sensible to replace the settings that are intended to stop the 'ident' operation by a recipe that's supplied by the ```exim4`` documentation. This means commenting out two lines:
+
+``` sh
+rfc1413_hosts =
+rfc1413_query_timeout = 5s
+```
+
+in ```00-main/60-general-options``` and adding a new file that includes the approved setting ```00-main/65-no-ident```.
+
+The new file is:
+
+``` sh
+/etc/exim4/sympl.d/00-main/65-no-ident
+```
+
+The file that needs replacing is:
+
+``` sh
+/etc/exim4/sympl.d/00-main/60-general-options
+```
+
