@@ -1,0 +1,6 @@
+  #
+  # NB log_selector can only appear once
+  # Remove the setting in 00-main/50-tls-options
+  # Set logging values
+  # This improves picking up attempts to get logins
+  log_selector = +tls_sni +smtp_protocol_error

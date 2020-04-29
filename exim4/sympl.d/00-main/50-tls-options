@@ -11,8 +11,10 @@
 tls_advertise_hosts = *
 
 # Allow localhost to authenticate without TLS, or any TLS connection.
-
-auth_advertise_hosts = localhost : ${if eq{$tls_cipher}{}{no_matching_hosts}{*}}
+# Hillside - don't care about connecting to the local exim4 with TCP
+# so lose this, it provides unwanted error messages
+#auth_advertise_hosts = localhost : ${if eq{$tls_cipher}{}{no_matching_hosts}{*}}
+auth_advertise_hosts = *
 
 # Specify the location of the Exim server's TLS certificate and private key.
 # The private key must not be encrypted (password protected). You can put
@@ -21,8 +23,8 @@ auth_advertise_hosts = localhost : ${if eq{$tls_cipher}{}{no_matching_hosts}{*}}
 # options.
 
 # Log the TLS_SNI string when an email is accepted.
-
-log_selector = +tls_sni
+# Moved to 25-logging
+# log_selector = +tls_sni
 
 # Use the domain certificate, if there's a matching domain, and the certificate exists
 # otherwise use the default certificate.
