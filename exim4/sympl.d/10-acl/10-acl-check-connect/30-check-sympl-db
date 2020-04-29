@@ -1,0 +1,42 @@
+.ifdef SYMPL_INCIDENT_THRESHOLD
+  #
+  # Use of the sqlite3 database /var/lib/sympl/firewall-blacklist-count.db
+  # in Symple or the database in a Symbiosis system
+  # this database has the history of all the bad ips the machine has seen and
+  # a count of all the incidents that have been discovered
+  #
+
+  # Configured in 
+  # along with threshold for incident count 
+  # see 00-main/21-connect-check
+ 
+  # ipv4 addresses are in the database 'as-is'
+  deny  message = Blacklisted: Denied access - history of unwanted activity
+	condition = ${if isip4{$sender_host_address}{true}{false}}
+	# perform lookup, return 0 on failure
+	set acl_m9 = ${lookup sqlite {SYMPL_DB \
+	                select sum(count) from blacklist where ip = '$sender_host_address' group by ip; } \
+		        {$value} {0} }
+	condition = ${if >{$acl_m9}{SYMPL_INCIDENT_THRESHOLD} }
+
+  # Lookups for ipv6 addresses need to be converted to /64 before lookup up
+  # these addresses are stored as /64 normalised address with a trailing /64
+  # simplest way of doing this is to truncate the address we have and use a like lookup in sqlite3
+
+  # sq regex looks for two sections
+  # first part of the ip address - four sets of possibly zero to four characters 0-9a-f terminated by :
+  # second part is not captured
+  # probably could be a more compact regex, but KISS - avoiding write-once, read-never
+
+  deny  message = Blacklisted: Denied access - history of unwanted activity
+	condition = ${if isip6{$sender_host_address}{true}{false}}
+	# exim has a full ipv6 address - and we don't want that, normalise it
+	set acl_m9 = ${ipv6norm:$sender_host_address}
+	# lose the second half of the address
+	set acl_m9 = ${sg {$acl_m9}{\N^([0-9a-f]{0,4}:[0-9a-f]{0,4}:[0-9a-f]{0,4}:[0-9a-f]{0,4}:)(?:.*)$\N}{\$1}}
+	# perform lookup, return 0 on failure
+	set acl_m9 = ${lookup sqlite {SYMPL_DB \
+	                select sum(count) from blacklist where ip like '${acl_m9}%' group by ip; } \
+		        {$value} {0} }
+	condition = ${if >{$acl_m9}{SYMPL_INCIDENT_THRESHOLD} }
+.endif

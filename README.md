@@ -88,3 +88,44 @@ The file is
 ``` sh
 [exim4/sympl.d/10-acl-check-connect/20-accept-known](exim4/sympl.d/10-acl-check-connect/20-accept-known)
 ```
+
+## Exim - ch6 - Use the Sympl/Symbiosis/Nftfw firewall database to block IPs
+
+One of the things lacking in the Symbiosis firewall (currently run by Sympl) is the lack of feedback into the firewall about sites coming back and trying again. In my experience, sites come back again and again, and we want to block them. This new file looks up the IP in the sqlite3 database managed by the firewall, and blocks newcomers with
+
+``` sh
+Blacklisted: Denied access - history of unwanted activity
+```
+
+if the count of their transgressions is over some threshold. Because this message appears in the mail logs, it can be detected and the firewall state updated, so a returning site that's timed out will make a re-appearance in the firewall. 
+
+Defines in ```exim4/sympl.d/00-main/21-connect-check``` control the rule, we need to select for different firewalls and system versions.
+
+``` sh
+SYMPL_INCIDENT_THRESHOLD = 10
+```
+will, if defined, include this rule and is used for threshold checking.  We also need where the database is stored.
+
+``` sh
+SYMPL_DB = /var/lib/sympl/firewall-blacklist-count.db
+```
+The database needs a different name for a Symbiosis system.
+
+The new file is:
+
+``` sh
+[exim4/sympl.d/10-acl/10-acl-check-connect/30-check-sympl-db](exim4/sympl.d/10-acl/10-acl-check-connect/30-check-sympl-db)
+```
+
+A similar rule exists for the Nftfw firewall, it's also controlled by a define in ```exim4/sympl.d/10-acl/10-acl-check-connect```,
+
+``` sh
+NFTFW_INCIDENT_THRESHOLD = 10
+```
+and again, if defined, will include the rule.
+
+The new file for nftfw is:
+
+``` sh
+[exim4/sympl.d/10-acl/10-acl-check-connect/30-check-nftfw-db](exim4/sympl.d/10-acl/10-acl-check-connect/30-check-nftfw-db)
+```
