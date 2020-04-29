@@ -1,0 +1,23 @@
+# This transport is used for delivering messages over SMTP connections.
+
+remote_smtp:
+  debug_print = "T: remote_smtp for $local_part@$domain"
+  driver = smtp
+  # 
+  # Use the domain's IP (if it has one) to send outgoing mail.  We use
+  # $sender_address_domain, or a default value kept in
+  # /etc/sympl/config/ip(s).
+  #
+  interface = <, ${extract {1}{:}\
+      {${filter\
+        {VHOST_DIR/$sender_address_domain/VHOST_CONFIG_DIR/ip:VHOST_DIR/$sender_address_domain/VHOST_CONFIG_DIR/ips:/etc/sympl/config/ip:/etc/sympl/config/ips}\
+        {exists{$item}}\
+      }}\
+      {${if !eq{$value}{}{\
+        ${filter\
+          {<,${readfile{$value}}}\
+          {isip{$item}}\
+        }}\
+      }}\
+    }
+

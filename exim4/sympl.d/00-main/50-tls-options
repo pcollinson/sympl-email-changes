@@ -1,0 +1,68 @@
+# If Exim is compiled with support for TLS, you may want to enable the
+# following options so that Exim allows clients to make encrypted
+# connections. In the authenticators section below, there are template
+# configurations for plaintext username/password authentication. This kind
+# of authentication is only safe when used within a TLS connection, so the
+# authenticators will only work if the following TLS settings are turned on
+# as well.
+
+# Allow any client to use TLS.
+
+tls_advertise_hosts = *
+
+# Allow localhost to authenticate without TLS, or any TLS connection.
+
+auth_advertise_hosts = localhost : ${if eq{$tls_cipher}{}{no_matching_hosts}{*}}
+
+# Specify the location of the Exim server's TLS certificate and private key.
+# The private key must not be encrypted (password protected). You can put
+# the certificate and private key in the same file, in which case you only
+# need the first setting, or in separate files, in which case you need both
+# options.
+
+# Log the TLS_SNI string when an email is accepted.
+
+log_selector = +tls_sni
+
+# Use the domain certificate, if there's a matching domain, and the certificate exists
+# otherwise use the default certificate.
+
+tls_certificate = \
+    ${if and {\
+                 { eq {${domain:foo@$tls_in_sni}} {$tls_in_sni}}\
+                 { exists{/srv/$tls_in_sni/config/ssl/current/ssl.combined} }\
+             }\
+             {/srv/$tls_in_sni/config/ssl/current/ssl.combined}\
+             {/etc/ssl/ssl.combined}\
+     }
+
+# "tls_privatekey" defaults to the value of tls_certificate, which is fine
+# as we are using the combined certificate.
+
+# In order to support roaming users who wish to send email from anywhere,
+# you may want to make Exim listen on other ports as well as port 25, in
+# case these users need to send email from a network that blocks port 25.
+# The standard port for this purpose is port 587, the "message submission"
+# port. See RFC 4409 for details. Microsoft MUAs cannot be configured to
+# talk the message submission protocol correctly, so if you need to support
+# them you should also allow TLS-on-connect on the traditional but
+# non-standard port 465.
+
+tls_on_connect_ports = 465
+
+#
+# Sensible set of TLS ciphers.  This is loosely based on the "intermediate"
+# suite described at https://wiki.mozilla.org/Security/Server_Side_TLS.  RC4 is
+# removed unless the connecting port is 25, so ancient remote mail servers
+# don't break too badly.
+#
+tls_require_ciphers  = %SERVER_PRECEDENCE:%LATEST_RECORD_VERSION:%COMPAT:PFS:NORMAL:-VERS-SSL3.0:-VERS-TLS1.0:-MD5:\
+                       -CURVE-SECP192R1:-CURVE-SECP224R1:-CAMELLIA-256-CBC:-CAMELLIA-192-CBC:-CAMELLIA-128-CBC:\
+                       -CAMELLIA-128-GCM:-CAMELLIA-256-GCM\
+                       ${if !eq{$received_port}{25}{:-ARCFOUR-128}}
+
+#
+# This stores the DH parameters in /var/spool/exim4/gnutls-dhparam-NNNN.
+#
+tls_dhparam = historic
+

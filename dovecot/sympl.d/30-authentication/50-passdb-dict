@@ -1,0 +1,10 @@
+#
+# Auth using the Sympl dict proxy.
+#
+# See http://wiki2.dovecot.org/Dict
+#
+passdb {
+  driver = dict
+  args = /etc/dovecot/sympl-dict-auth.conf
+}
+

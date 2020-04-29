@@ -1,0 +1,15 @@
+# This router handles actual local_user addresses
+local_users_mailbox:
+  debug_print = "R: local_users_mailbox for $local_part@$domain"
+  driver = redirect
+  domains = $primary_hostname
+  check_local_user
+  local_parts = ! root : ! sympl
+  local_part_suffix = +*
+  local_part_suffix_optional
+  data  = ${home}/Maildir/${if eqi{$h_X-Spam-Status:}{spam}{.Spam/}{}}
+  # Set permissions for any actions we might take
+  user  = ${local_user_uid}
+  group = ${local_user_gid}
+  directory_transport = address_directory
+

@@ -1,0 +1,16 @@
+# This router handles actual vhost addresses
+vhost_mailbox:
+  debug_print = "R: vhost_mailbox for $local_part@$domain"
+  driver = redirect
+  domains = +vhost_domains
+  local_part_suffix = +*
+  local_part_suffix_optional
+  condition  = ${if exists{VHOST_DIR/$domain/VHOST_MAILBOX_DIR/$local_part/}}
+  # Set the home directory for any routers/transports.
+  router_home_directory    = VHOST_DIR/$domain/VHOST_MAILBOX_DIR/$local_part
+  transport_home_directory = VHOST_DIR/$domain/VHOST_MAILBOX_DIR/$local_part
+  data  = VHOST_DIR/$domain/VHOST_MAILBOX_DIR/$local_part/Maildir/${if eqi{$h_X-Spam-Status:}{spam}{.Spam/}{}}
+  user  = ${extract{uid}{${stat:VHOST_DIR/$domain}}}
+  group = ${extract{gid}{${stat:VHOST_DIR/$domain}}}
+  directory_transport = address_directory
+
