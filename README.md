@@ -140,4 +140,33 @@ The new file is:
 [exim4/sympl.d/10-acl/10-acl-check-connect/50-ratelimit](exim4/sympl.d/10-acl/10-acl-check-connect/50-ratelimit)
 ```
 
+## Exim - ch8 - Adding Extra Blacklists
 
+The distributed system checks IPs against Spamhaus blacklists, and I wanted to add others, specifically Barracuda and Spamcop. The rule works the same way as the Spamhaus one, you need to put two files named for their DNS name in ```srv/DOMAIN/config/blacklists``` to include them:
+
+``` sh
+b.barracudacentral.org
+bl.spamcop.org
+```
+so they are optional.
+
+The new file is in the check_rcpt ACL:
+
+``` sh
+[exim4/sympl.d/10-acl/50-acl-check-rcpt/76-dns-blacklists](sexim4/sympl.d/10-acl/50-acl-check-rcpt/76-dns-blacklists)
+```
+
+## Exim - ch9 - Reject connections if there is no reverse PTR record for the IP
+
+This is 'standard' for ```sendmail``` sites, and is a good way of rejecting spammers who often don't have a registered PTR record for their IP.
+It's probably wise to run a local caching nameserver to use this, but this seems wise to me anyway.
+
+The new file is:
+
+``` sh
+[exim4/sympl.d/10-acl/50-acl-check-rcpt/77-check-sender-host-name](exim4/sympl.d/10-acl/50-acl-check-rcpt/77-check-sender-host-name)
+```
+
+## Finally
+
+These changes are well tried and tested over some couple of years on a Symbiosis system. They will make your email system more robust and will provide information for your firewall to detect and prohibit spammers.
