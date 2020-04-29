@@ -18,7 +18,7 @@ auth_verbose = yes
 is needed. I've raided the standard distribution to place all the authorisation variables into one file because they are useful to have, and installed the file in:
 
 ``` sh
-/etc/dovecot/sympl.d/10-main/35-log-debug
+[dovecot/sympl.d/10-main/35-log-debug](dovecot/sympl.d/10-main/35-log-debug)
 ```
 
 ## Dovecot - ch2 - Add private ports for imap
@@ -28,7 +28,7 @@ My machine is not public, in the sense that everyone using it is known and so it
 The new file is:
 
 ``` sh
-/etc/dovecot/sympl.d/10-main/15-imap-ports
+[dovecot/sympl.d/10-main/15-imap-ports](dovecot/sympl.d/10-main/15-imap-ports)
 ```
 
 ## Exim - ch3 - Add +smtp_protocol_error to logging
@@ -38,13 +38,13 @@ We want exim to log protocol errors, because this is another way to detect bad t
 The new file is:
 
 ``` sh
-/etc/exim4/sympl.d/00-main/25-logging
+[exim4/sympl.d/00-main/25-logging](exim4/sympl.d/00-main/25-logging)
 ```
 
 The file that needs replacing is:
 
 ``` sh
-/etc/exim4/sympl.d/00-main/50-tls-options
+[exim4/sympl.d/00-main/50-tls-options](exim4/sympl.d/00-main/50-tls-options)
 ```
 
 ## Exim - ch4 - replace 'ident' suppression by approved recipe
@@ -61,12 +61,30 @@ in ```00-main/60-general-options``` and adding a new file that includes the appr
 The new file is:
 
 ``` sh
-/etc/exim4/sympl.d/00-main/65-no-ident
+[exim4/sympl.d/00-main/65-no-ident](exim4/sympl.d/00-main/65-no-ident)
 ```
 
 The file that needs replacing is:
 
 ``` sh
-/etc/exim4/sympl.d/00-main/60-general-options
+[exim4/sympl.d/00-main/60-general-options](exim4/sympl.d/00-main/60-general-options)
 ```
 
+## Exim - ch5 - Allow skipping of connect ip checking
+
+The next few changes put some work into the connect access control list, so we will be turning away some IP addresses before they've said anything, and all we know about them is their IP address. We want to try to stop IPs that we know are bad from being able to verify users and exhaustively decrypt passwords. At one point I put checks for the IP in the various Blackhole lists in here, but that proved to be overkill, I was just slowly collecting their databases. However, the checks that follow do stop a lot of bad guy from getting near the mail system.
+
+We want to be able to overcome any checks that are in connect ACL, because we don't know much about them. We can select based on the 'good' IPs we know, but it's handy to be able to add an IP into the list. So this change uses a file in ```/etc/exim4``` called ```whitelist_connect_hosts```. If needed it contains a list of IP addresses that should not be checked in the connect ACL.
+
+There's a new file in the 00-main that defines the hostlist needed to make this check. It also is a useful place to put some defines that I'll come to later.
+
+The new file is:
+``` sh
+[exim4/sympl.d/00-main/21-connect-check](exim4/sympl.d/00-main/21-connect-check)
+```
+and we need a file that checks this file if it's there and accepts connections, avoiding any connect checks. The file also allows connections from IPs in ```/etc/exim4/whitelist/hosts_by_ip``` file, hosts that we are relaying from (in ```/etc/exim4/relay_from_hosts``` and 'private addresses' - the common public set of local IP addresses.
+
+The file is
+``` sh
+[exim4/sympl.d/10-acl-check-connect/20-accept-known](exim4/sympl.d/10-acl-check-connect/20-accept-known)
+```

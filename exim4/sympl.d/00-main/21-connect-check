@@ -1,0 +1,17 @@
+# Hostlist to inhibit connection checking in
+# 10-acl/10-acl-check-connect/20-accept-known
+# IPs in the file will not be checked in the connect check,
+# but will be checked for spam when the rcpt ACL is checked
+hostlist   whitelist_connection_check = ${if exists{ETC_DIR/exim4/whitelist_connect_hosts}{net-iplsearch;ETC_DIR/exim4/whitelist_connect_hosts}}
+
+# Symbiosis database check incident threshold
+# see 10-acl/10-acl-check-connect/30-check-sympl-db
+#SYMPL_INCIDENT_THRESHOLD = 10
+# For Sympl
+#SYMPL_DB = /var/lib/sympl/firewall-blacklist-count.db
+# For Symbiosis
+#SYMPL_DB = /var/lib/symbiosis/firewall-blacklist-count.db
+
+# nftfw database check incident threshold
+# see 10-acl/10-acl-check-connect/30-check-nftfw-db
+NFTFW_INCIDENT_THRESHOLD = 10

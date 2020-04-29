@@ -1,0 +1,5 @@
+
+  # Allow whitelisted ips, known hosts and private addresses to be accepted
+
+  accept  hosts = : +whitelisted_hosts_by_ip : +whitelist_connection_check : +relay_from_hosts : +private_addresses 
+
