@@ -13,13 +13,12 @@ I want Dovecot to tell me when failed attempts are made to verify identities. It
 ``` sh
 # Log unsuccessful authentication attempts and the reasons why they failed.
 auth_verbose = yes
-
 ```
 is needed. I've raided the standard distribution to place all the authorisation variables into one file because they are useful to have, and installed the file in:
 
-``` sh
-[dovecot/sympl.d/10-main/35-log-debug](dovecot/sympl.d/10-main/35-log-debug)
-```
+
+- [dovecot/sympl.d/10-main/35-log-debug](./dovecot/sympl.d/10-main/35-log-debug)
+
 
 ## Dovecot - ch2 - Add private ports for imap
 
@@ -27,9 +26,7 @@ My machine is not public, in the sense that everyone using it is known and so it
 
 The new file is:
 
-``` sh
-[dovecot/sympl.d/10-main/15-imap-ports](dovecot/sympl.d/10-main/15-imap-ports)
-```
+- [dovecot/sympl.d/10-main/15-imap-ports](./dovecot/sympl.d/10-main/15-imap-ports)
 
 ## Exim - ch3 - Add +smtp_protocol_error to logging
 
@@ -37,15 +34,11 @@ We want exim to log protocol errors, because this is another way to detect bad t
 
 The new file is:
 
-``` sh
-[exim4/sympl.d/00-main/25-logging](exim4/sympl.d/00-main/25-logging)
-```
+- [exim4/sympl.d/00-main/25-logging](./exim4/sympl.d/00-main/25-logging)
 
 The file that needs replacing is:
 
-``` sh
-[exim4/sympl.d/00-main/50-tls-options](exim4/sympl.d/00-main/50-tls-options)
-```
+- [exim4/sympl.d/00-main/50-tls-options](,/exim4/sympl.d/00-main/50-tls-options)
 
 ## Exim - ch4 - replace 'ident' suppression by approved recipe
 
@@ -60,15 +53,12 @@ in ```00-main/60-general-options``` and adding a new file that includes the appr
 
 The new file is:
 
-``` sh
-[exim4/sympl.d/00-main/65-no-ident](exim4/sympl.d/00-main/65-no-ident)
-```
+- [exim4/sympl.d/00-main/65-no-ident](./exim4/sympl.d/00-main/65-no-ident)
 
 The file that needs replacing is:
 
-``` sh
-[exim4/sympl.d/00-main/60-general-options](exim4/sympl.d/00-main/60-general-options)
-```
+- [exim4/sympl.d/00-main/60-general-options](./exim4/sympl.d/00-main/60-general-options)
+
 
 ## Exim - ch5 - Allow skipping of connect ip checking
 
@@ -79,15 +69,14 @@ We want to be able to overcome any checks that are in connect ACL, because we do
 There's a new file in the 00-main that defines the hostlist needed to make this check. It also is a useful place to put some defines that I'll come to later.
 
 The new file is:
-``` sh
-[exim4/sympl.d/00-main/21-connect-check](exim4/sympl.d/00-main/21-connect-check)
-```
+
+- [exim4/sympl.d/00-main/21-connect-check](./exim4/sympl.d/00-main/21-connect-check)
+
 and we need a file that checks this file if it's there and accepts connections, avoiding any connect checks. The file also allows connections from IPs in ```/etc/exim4/whitelist/hosts_by_ip``` file, hosts that we are relaying from (in ```/etc/exim4/relay_from_hosts``` and 'private addresses' - the common public set of local IP addresses.
 
 The file is
-``` sh
-[exim4/sympl.d/10-acl-check-connect/20-accept-known](exim4/sympl.d/10-acl-check-connect/20-accept-known)
-```
+
+- [exim4/sympl.d/10-acl-check-connect/20-accept-known](./exim4/sympl.d/10-acl-check-connect/20-accept-known)
 
 ## Exim - ch6 - Use the Sympl/Symbiosis/Nftfw firewall database to block IPs
 
@@ -97,7 +86,7 @@ One of the things lacking in the Symbiosis firewall (currently run by Sympl) is 
 Blacklisted: Denied access - history of unwanted activity
 ```
 
-if the count of their transgressions is over some threshold. Because this message appears in the mail logs, it can be detected and the firewall state updated, so a returning site that's timed out will make a re-appearance in the firewall. 
+if the count of their transgressions is over some threshold. Because this message appears in the mail logs, it can be detected and the firewall state updated, so a returning site that's timed out will make a re-appearance in the firewall.
 
 Defines in ```exim4/sympl.d/00-main/21-connect-check``` control the rule, we need to select for different firewalls and system versions.
 
@@ -113,9 +102,7 @@ The database needs a different name for a Symbiosis system.
 
 The new file is:
 
-``` sh
-[exim4/sympl.d/10-acl/10-acl-check-connect/30-check-sympl-db](exim4/sympl.d/10-acl/10-acl-check-connect/30-check-sympl-db)
-```
+- [exim4/sympl.d/10-acl/10-acl-check-connect/30-check-sympl-db](./exim4/sympl.d/10-acl/10-acl-check-connect/30-check-sympl-db)
 
 A similar rule exists for the Nftfw firewall, it's also controlled by a define in ```exim4/sympl.d/10-acl/10-acl-check-connect```,
 
@@ -125,18 +112,18 @@ NFTFW_INCIDENT_THRESHOLD = 10
 and again, if defined, will include the rule.
 
 The new file for nftfw is:
-``` sh
-[exim4/sympl.d/10-acl/10-acl-check-connect/30-check-nftfw-db](exim4/sympl.d/10-acl/10-acl-check-connect/30-check-nftfw-db)
-```
+
+- [exim4/sympl.d/10-acl/10-acl-check-connect/30-check-nftfw-db](./exim4/sympl.d/10-acl/10-acl-check-connect/30-check-nftfw-db)
+
 
 ## Exim - ch7 - Ratelimiting connections
 
 Exim can ratelimit connections, and generally the only sites that 'legally' send mail very quickly at your machine are known relays, and we've carefully excluded them from these checks. The others are usually spammers or exhaustive decrypters that connect at full bore. The ratelimit provided by this rule doesn't block transgressors, so legal email sites will pick up and start again. It's not that draconian - 10 messages every 15 minutes. It's worth doing, because it generally gives the firewall scanning code time to evaluate the nastiness of the connection, so often when the nasties return they are blocked.
 
 The new file is:
-``` sh
-[exim4/sympl.d/10-acl/10-acl-check-connect/50-ratelimit](exim4/sympl.d/10-acl/10-acl-check-connect/50-ratelimit)
-```
+
+- [exim4/sympl.d/10-acl/10-acl-check-connect/50-ratelimit](./exim4/sympl.d/10-acl/10-acl-check-connect/50-ratelimit)
+
 
 ## Exim - ch8 - Adding Extra Blacklists
 
@@ -149,9 +136,9 @@ bl.spamcop.org
 so they are optional.
 
 The new file is in the check_rcpt ACL:
-``` sh
-[exim4/sympl.d/10-acl/50-acl-check-rcpt/76-dns-blacklists](sexim4/sympl.d/10-acl/50-acl-check-rcpt/76-dns-blacklists)
-```
+
+- [exim4/sympl.d/10-acl/50-acl-check-rcpt/76-dns-blacklists](./exim4/sympl.d/10-acl/50-acl-check-rcpt/76-dns-blacklists)
+
 
 ## Exim - ch9 - Reject connections if there is no reverse PTR record for the IP
 
@@ -160,9 +147,7 @@ It's probably wise to run a local caching nameserver to use this, but this seems
 
 The new file is:
 
-``` sh
-[exim4/sympl.d/10-acl/50-acl-check-rcpt/77-check-sender-host-name](exim4/sympl.d/10-acl/50-acl-check-rcpt/77-check-sender-host-name)
-```
+- [exim4/sympl.d/10-acl/50-acl-check-rcpt/77-check-sender-host-name](./exim4/sympl.d/10-acl/50-acl-check-rcpt/77-check-sender-host-name)
 
 ## Finally
 
