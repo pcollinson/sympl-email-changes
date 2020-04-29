@@ -1,0 +1,9 @@
+
+  # Log all senders' rates
+  #warn ratelimit = 0 / 15m / strict
+  #     log_message = Sender rate $sender_rate / $sender_rate_period
+
+  # Defer anyone else
+  defer message = Sender rate exceeds system limits, please try later
+  	ratelimit = 10 / 15m / strict
+	log_message = Sender deferred $sender_rate / $sender_rate_period

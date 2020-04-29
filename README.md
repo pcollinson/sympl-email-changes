@@ -129,3 +129,15 @@ The new file for nftfw is:
 ``` sh
 [exim4/sympl.d/10-acl/10-acl-check-connect/30-check-nftfw-db](exim4/sympl.d/10-acl/10-acl-check-connect/30-check-nftfw-db)
 ```
+
+## Exim - ch7 - Ratelimiting connections
+
+Exim can ratelimit connections, and generally the only sites that 'legally' send mail very quickly at your machine are known relays, and we've carefully excluded them from these checks. The others are usually spammers or exhaustive decrypters that connect at full bore. The ratelimit provided by this rule doesn't block transgressors, so legal email sites will pick up and start again. It's not that draconian - 10 messages every 15 minutes. It's worth doing, because it generally gives the firewall scanning code time to evaluate the nastiness of the connection, so often when the nasties return they are blocked.
+
+The new file is:
+
+``` sh
+[exim4/sympl.d/10-acl/10-acl-check-connect/50-ratelimit](exim4/sympl.d/10-acl/10-acl-check-connect/50-ratelimit)
+```
+
+
