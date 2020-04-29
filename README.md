@@ -21,4 +21,13 @@ is needed. I've raided the standard distribution to place all the authorisation 
 /etc/dovecot/sympl.d/10-main/35-log-debug
 ```
 
+## Dovecot - ch2
+
+My machine is not public, in the sense that everyone using it is known and so it's good to move the standard imap ports to somewhere else, which helps to defeat the robot attempts from script-kiddies. I remove pop access from the firewall, but a similar setup can be installed. If you are using ```roundcube``` then the standard ports need to be available, but only need to be active for ```localhost```. Again this file is missing from the standard Sympl distribution and I include it to assist you to do this. Look at the file, you'll need to supply your own private port numbers - replace ```YOUR PORT``` by two numbers.
+
+The new file is
+
+``` sh
+/etc/dovecot/sympl.d/10-main/15-imap-ports
+```
 

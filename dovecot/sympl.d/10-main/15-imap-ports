@@ -1,0 +1,21 @@
+# Hillside
+# Added so we can have internal standard ports
+# which are not in the firewall
+# and remote or external ports which are
+# mind you these are obvious choices but serve to keep kiddies out
+service imap-login {
+  inet_listener imap {
+  port = 143
+  }
+  inet_listener imaps {
+    port = 993
+    ssl = yes
+  }
+  inet_listener imapremote {
+    port = YOUR PORT
+  }
+  inet_listener imapsremote {
+    port = YOUR PORT
+    ssl = yes
+  }
+}
