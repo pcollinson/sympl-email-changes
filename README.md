@@ -6,4 +6,19 @@ I am starting from the configuration files supplied with Sympl as of 29/April/20
 
 Changes all affect files in the ```sympl.d``` directory in ```/etc/dovecot``` or ```/etc/exim4```. Change the files, then run ```make``` in the relevant directory to install the alterations.
 
+## Dovecot - ch1
+
+I want Dovecot to tell me when failed attempts are made to verify identities. It will do this, but it's not available in the installation. The configuration setting:
+
+``` sh
+# Log unsuccessful authentication attempts and the reasons why they failed.
+auth_verbose = yes
+
+```
+is needed. I've raided the standard distribution to place all the authorisation variables into one file because they are useful to have, and installed the file in:
+
+``` sh
+/etc/dovecot/sympl.d/10-main/35-log-debug
+```
+
 
