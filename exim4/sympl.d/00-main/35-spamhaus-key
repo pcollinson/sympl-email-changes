@@ -1,0 +1,15 @@
+#
+# Spamhaus rules
+# ==============
+#
+# It's now possible to sign up for a Spamhaus data query key
+# if you qualify as a non-commercial service.
+# See https://www.spamhaustech.com/free-trial/sign-up-for-a-free-data-query-service-account/
+#
+# If this value is defined it's used to include a section in
+# 10-acl/50-acl-check-rcpt/75-dns-blacklists
+# and appropriate control files are needed in the VHOST_CONFIG_DIR to
+# access the appropriate rule
+#
+# to activate - remove the leading # and add your key replacing YOURKEY
+#SPAMHAUS_DQ_KEY = YOURKEY

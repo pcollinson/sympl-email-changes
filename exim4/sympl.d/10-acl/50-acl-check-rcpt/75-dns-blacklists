@@ -1,4 +1,91 @@
+.ifdef SPAMHAUS_DQ_KEY
   # Spamhaus rules
+  # ==============
+  #
+  # It's now possible to sign up for a Spamhaus data query key
+  # if you qualify as a non-commercial service.
+  # See https://www.spamhaustech.com/free-trial/sign-up-for-a-free-data-query-service-account/
+  #
+  # These lists are considerably more current than the free public DNSBLs supplied by spamhaus.org.
+  #
+  # To activate
+  # Define SPAMHAUS_DQ_KEY in 00-main,  I've used 00-main/35-spamhaus-key for this.
+  # then create a file or files named for the lookup domain below in the blacklists directory
+  # of VHOST_CONFIG_DIR - usually /srv/example.domain/config.
+  #
+  # You should probably not use the public rules below AND these rules, however if you are converting
+  # from the public to the dq lists then the dq rules will be tested first and should the provide
+  # confidence that things are working.
+  #
+  # This collection of rules will fire if various files are in the blacklists
+  # directory of the VHOST_CONFIG_DIR for a domain.  It tries to be efficient
+  # with lookups, and doesn't query the same dataset twice.
+  #
+  # So for example, if the files sbl.dq.spamhaus.net and sbl-xbl.dq.spamhaus.net are
+  # present, only the latter list is checked.
+  #
+  # The following lists can be checked:
+  #  * sbl.dq.spamhaus.net
+  #  * xbl.dq.spamhaus.net
+  #  * pbl.dq.spamhaus.net
+  #  * sbl-xbl.dq.spamhaus.net
+  #  * zen.sq.spamhaus.net
+  #
+  # these rules are an edited copy of the original rule set retained below, except that it doesn't use
+  # $dns_domain in external messages because it would expose the Spamhaus key.
+
+  deny    domains       = +vhost_domains
+          condition     = ${if and{ \
+                            {exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/sbl.dq.spamhaus.net}}  \
+                            {!exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/sbl-xbl.dq.spamhaus.net}} \
+                            {!exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/xbl.dq.spamhaus.net}} \
+                            {!exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/zen.dq.spamhaus.net}} \
+                          }}
+          dnslists      = SPAMHAUS_DQ_KEY.sbl.dq.spamhaus.net
+          message       = $sender_host_address is blacklisted at sbl.dq.spamhaus.net.\n\
+                          Please see $dnslist_text
+          log_message   = IP blacklisted at $dnslist_domain.
+
+  deny    domains       = +vhost_domains
+          condition     = ${if and{ \
+                            {or{ \
+                              {exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/sbl-xbl.dq.spamhaus.net}} \
+                              {and{ \
+                                {exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/xbl.dq.spamhaus.net}} \
+                                {exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/sbl.dq.spamhaus.net}} \
+                              }} \
+                            }} \
+                            {!exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/zen.dq.spamhaus.net}} \
+                          }}
+          dnslists      = SPAMHAUS_DQ_KEY.sbl-xbl.dq.spamhaus.net
+          message       = $sender_host_address is blacklisted at sbl-xbl.dq.spamhaus.net.\n\
+                          Please see $dnslist_text
+          log_message   = IP blacklisted at $dnslist_domain.
+
+  deny    domains       = +vhost_domains
+          condition     = ${if and{ \
+                            {exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/pbl.dq.spamhaus.net}}  \
+                            {!exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/zen.dq.spamhaus.net}} \
+                          }}
+          dnslists      = SPAMHAUS_DQ_KEY.pbl.dq.spamhaus.net
+          message       = $sender_host_address is blacklisted at pbl.dq.spamhaus.net.\n\
+                          Please see $dnslist_text
+          log_message   = IP blacklisted at $dnslist_domain.
+
+  deny    domains       = +vhost_domains
+          condition     = ${if and{ \
+                            {exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/zen.dq.spamhaus.net}} \
+                          }}
+          dnslists      = SPAMHAUS_DQ_KEY.zen.dq.spamhaus.net
+          message       = $sender_host_address is blacklisted at zen.dq.spamhaus.net.\n\
+                          Please see $dnslist_text
+          log_message   = IP blacklisted at $dnslist_domain.
+
+# Below is the original content of this file
+.endif
+
+
+# Spamhaus rules
   # ==============
   #
   # This collection of rules will fire if various files are in the blacklists
@@ -65,4 +152,3 @@
           message       = $sender_host_address is blacklisted at $dnslist_domain.\n\
                           Please see $dnslist_text
           log_message   = IP blacklisted at $dnslist_domain.
-

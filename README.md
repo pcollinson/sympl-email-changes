@@ -142,12 +142,28 @@ The new file is in the check_rcpt ACL:
 
 ## Exim - ch9 - Reject connections if there is no reverse PTR record for the IP
 
-This is 'standard' for ```sendmail``` sites, and is a good way of rejecting spammers who often don't have a registered PTR record for their IP.
-It's probably wise to run a local caching nameserver to use this, but this seems wise to me anyway.
+This is 'standard' for ```sendmail``` sites, and is a good way of rejecting spammers who often don't have a registered PTR record for their IP. It's probably wise to run a local caching nameserver to use this, but this seems wise to me anyway.
 
 The new file is:
 
 - [exim4/sympl.d/10-acl/50-acl-check-rcpt/77-check-sender-host-name](./exim4/sympl.d/10-acl/50-acl-check-rcpt/77-check-sender-host-name)
+
+## Exim - ch10 - Use Spamhaus Data Query Service for DNSBL lookups
+
+Spamhaus provide a better service if you sign up for an account. You will get a set of private lookup addresses for the account incorporating a personalised key, the addresses replaces the public lookups installed in the Sympl ```exim4``` ACL file. Spamhaus have rules for commercial use and if you qualify they expect you to pay. Incidentally, they do monitor usage and can withhold service if your site transgresses. The fee is not huge and is worth paying when you consider how useful their efforts are. They also provide free 'trial' accounts, see [their website](https://www.spamhaustech.com/free-trial/sign-up-for-a-free-data-query-service-account/), the page also explains the commercial rules. I recommend that you sign up.
+
+This change provides two files enabling the use of these lookup addresses. ```35-spamhaus-key``` defines a macro for the key which is then used in the replacement file ```75-dns-blacklists``` to include the Spamhaus lookup rules. The new rules are added at the top of this file and are only seen by ```exim4``` when the key is defined. The rules are a clone of the original Spamhaus set with the changes made to use the new addresses.
+
+The existing rules are activated by placing a file like ```zen.spamhaus.org```  in the appropriate ```srv/example.domain/config/blacklists``` directory. The new rules are actioned with a name like ```zen.dq.spamhaus.net``` so both sets can be used, which I did until I was sure that my key worked.
+
+The new control file is:
+
+- [exim4/sympl.d/00-main/35-spamhaus-key](./exim4/sympl.d/00-main/35-spamhaus-key)
+
+The replacement file is (see comments at the top of the file):
+
+- [exim4/sympl.d/10-acl/50-acl-check-rcpt/75-dns-blacklists](./exim4/sympl.d/10-acl/50-acl-check-rcpt/75-dns-blacklists)
+
 
 ## Finally
 
