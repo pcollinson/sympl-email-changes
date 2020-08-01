@@ -38,7 +38,7 @@ The new file is:
 
 The file that needs replacing is:
 
-- [exim4/sympl.d/00-main/50-tls-options](,/exim4/sympl.d/00-main/50-tls-options)
+- [exim4/sympl.d/00-main/50-tls-options](./exim4/sympl.d/00-main/50-tls-options)
 
 ## Exim - ch4 - replace 'ident' suppression by approved recipe
 
@@ -76,7 +76,7 @@ and we need a file that checks this file if it's there and accepts connections, 
 
 The file is
 
-- [exim4/sympl.d/10-acl-check-connect/20-accept-known](./exim4/sympl.d/10-acl-check-connect/20-accept-known)
+- [exim4/sympl.d/10-acl/10-acl-check-connect/20-accept-known](./exim4/sympl.d/10-acl/10-acl-check-connect/20-accept-known)
 
 ## Exim - ch6 - Use the Sympl/Symbiosis/Nftfw firewall database to block IPs
 
