@@ -1,0 +1,9 @@
+v2.0.0	Remove files not used by this installation, leaving only the files
+	that are needed.
+	Add Install.sh script to automatically install the files, having
+	taken a backup.
+	Add support for Spamhaus dbl lists
+	Rework documentation.
+
+v1.0.0	Original version, basically installing the changes so that
+	the github commit message signalled the change

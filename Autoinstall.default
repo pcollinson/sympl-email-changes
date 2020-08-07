@@ -1,0 +1,100 @@
+#!/bin/sh
+#
+# To use Install.sh,
+# copy this file to Autoinstall.conf where it will be loaded
+# when you run Install.sh.
+# You can edit the values below to choose which files to install
+# To remove an option change the relevant AUTO_CH value to N
+#
+# Autoinstall.conf is ignored by git, so will not impact on any future
+# pull requests.
+#
+#
+# Change 1: Dovecot
+# Add Authentication Logging
+AUTO_CH1=Y
+
+#
+# Change 2: Dovecot
+# Supply private IMAP and IMAPS ports
+# Add your ports
+AUTO_CH2=Y
+AUTO_IMAP_PORT=
+AUTO_IMAPS_PORT=
+
+#
+# Change 3: Exim
+# Add +smtp_protocol_error to logging
+AUTO_CH3=Y
+
+#
+# Change 4: Exim
+# replace 'ident' suppression by approved recipe
+AUTO_CH4=Y
+
+#
+# Change 5: Exim
+# Allow skipping of connect ip checking
+AUTO_CH5=Y
+
+#
+# Change 6: Exim
+# Use the Sympl/Symbiosis/Nftfw firewall database to block IPs
+AUTO_CH6=Y
+# NB to use this option the script wants to set values in
+# the file installed in AUTO_CH5.
+#
+# Set AUTO_CH6_DATABASE to
+# sympl or nftfw
+# depending on which firewall system you are using
+# if this is not defined, the script will look for the system
+# you are using in the following order
+# nftfw - if /etc/nftfw/config.ini or /usr/local/etc/nftfw/config.ini  exists
+# sympl - if /var/lib/sympl/firewall-blacklist-count.db exists
+# symbiosis - if /var/lib/symbiosis/firewall-blacklist-count.db exists
+AUTO_CH6_DATABASE=
+
+#
+# Change 7: Exim
+# Ratelimiting connections
+AUTO_CH7=Y
+
+#
+# Change 8: Exim
+# Adding Extra Blacklists
+# NB these need activating in
+# srv/domain.example/config/blacklists
+AUTO_CH8=Y
+
+#
+# Change 9: Exim
+# Reject connections if there is no reverse PTR record for the IP
+AUTO_CH9=Y
+
+#
+# Change 10: Exim
+# Use Spamhaus Data Query Service for DNSBL lookups
+AUTO_CH10=Y
+# NB these need activating in
+# srv/domain.example/config/blacklists
+# You need to sign up at
+# https://www.spamhaustech.com/free-trial/sign-up-for-a-free-data-query-service-account/
+# and insert your key here
+AUTO_SPAMHAUS_DB_KEY=
+
+# To test the install script, creating a changed set of files
+# in /tmp/etc - set AUTO_TEST to Y
+AUTO_TEST=N
+# Create testing files
+# Set to N on non-Sympl systems when test files need to be made by hand
+# because the files don't exist in /etc
+AUTO_TEST_CREATE=Y
+# change the base for the test files if needed
+AUTO_TEST_BASE=/tmp
+
+# Version for Autoinstall - don't change this
+# it's used by Install to cope with future changes
+AUTO_VERSION=1
+
+# Do not remove this line
+export AUTO_CH1 AUTO_CH2 AUTO_IMAP_PORT AUTO_IMAPS_PORT AUTO_CH3 AUTO_CH4 AUTO_CH5 AUTO_CH6 AUTO_CH6_DATABASE AUTO_CH7 AUTO_CH8 AUTO_CH9 AUTO_CH10 AUTO_SPAMHAUS_DB_KEY AUTO_TEST AUTO_TEST_CREATE AUTO_TEST_BASE AUTO_VERSION
