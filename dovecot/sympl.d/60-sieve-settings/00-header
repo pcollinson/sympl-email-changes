@@ -1,6 +1,0 @@
-##
-## Managesieve specific settings
-##
-
-protocol sieve {
-

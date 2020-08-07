@@ -1,4 +1,0 @@
-  #
-  # Auto-create new mailboxes
-  #
-  lda_mailbox_autocreate = yes

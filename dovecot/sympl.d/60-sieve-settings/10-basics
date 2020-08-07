@@ -1,9 +1,0 @@
-
-  # Specify an alternative address:port the daemon must listen on
-  # (default: *:2000)
-  service managesieve-login { 
-    inet_listener sieve {
-      address = * [::] 
-    }
-  }
-

@@ -1,2 +1,0 @@
-  # Deny all non-authenticated connection attempts.
-  deny  message = SSL or TLS encryption required when authenticating.

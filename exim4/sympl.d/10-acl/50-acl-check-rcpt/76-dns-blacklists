@@ -1,20 +1,20 @@
   # Other lists
   # ==============
+
+  # Spamcop doesn't deal with ipv6 addresses
   deny    domains       = +vhost_domains
           condition     = ${if and{ \
-                            {exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/bl.spamcop.net}}  \
-                          }}
+			       {isip4{$sender_host_address}} \
+	  		       {exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/bl.spamcop.net}} \
+                  	  }}
           dnslists      = bl.spamcop.net
           message       = $sender_host_address is blacklisted at $dnslist_domain.\n\
                           Please see $dnslist_text
           log_message   = IP blacklisted at $dnslist_domain.
 
   deny    domains       = +vhost_domains
-          condition     = ${if and{ \
-                            {exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/b.barracudacentral.org}}  \
-                          }}
+          condition     = ${if exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/b.barracudacentral.org}}
           dnslists      = b.barracudacentral.org
           message       = $sender_host_address is blacklisted at $dnslist_domain.\n\
                           Please see $dnslist_text
           log_message   = IP blacklisted at $dnslist_domain.
-

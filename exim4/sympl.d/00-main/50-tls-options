@@ -11,10 +11,8 @@
 tls_advertise_hosts = *
 
 # Allow localhost to authenticate without TLS, or any TLS connection.
-# Hillside - don't care about connecting to the local exim4 with TCP
-# so lose this, it provides unwanted error messages
-#auth_advertise_hosts = localhost : ${if eq{$tls_cipher}{}{no_matching_hosts}{*}}
-auth_advertise_hosts = *
+
+auth_advertise_hosts = localhost : ${if eq{$tls_cipher}{}{no_matching_hosts}{*}}
 
 # Specify the location of the Exim server's TLS certificate and private key.
 # The private key must not be encrypted (password protected). You can put
@@ -67,4 +65,3 @@ tls_require_ciphers  = %SERVER_PRECEDENCE:%LATEST_RECORD_VERSION:%COMPAT:PFS:NOR
 # This stores the DH parameters in /var/spool/exim4/gnutls-dhparam-NNNN.
 #
 tls_dhparam = historic
-

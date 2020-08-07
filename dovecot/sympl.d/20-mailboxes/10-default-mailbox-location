@@ -1,5 +1,0 @@
-#
-# This is the *default* mailbox location, and overriden in Sympl by the
-# dict proxy.
-#
-mail_location = maildir:~/Maildir

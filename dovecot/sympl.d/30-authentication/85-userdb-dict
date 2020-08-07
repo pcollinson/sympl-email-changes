@@ -1,9 +1,0 @@
-# This userdb entry is for use by the LDA which doesn't work with "prefetch"
-# 
-# http://wiki2.dovecot.org/Dict
-userdb {
-  driver = dict
-  args = /etc/dovecot/sympl-dict-auth.conf
-}
-
-

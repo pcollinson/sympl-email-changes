@@ -1,3 +1,0 @@
-# ACL that is used after the AUTH command
-acl_check_auth:
-

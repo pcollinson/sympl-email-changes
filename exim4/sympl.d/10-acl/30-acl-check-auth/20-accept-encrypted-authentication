@@ -1,3 +1,0 @@
-  # Accept all encrypted authentication attempts
-  accept encrypted = *
-

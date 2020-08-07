@@ -1,7 +1,0 @@
-  #
-  # Set the default quota rule as "unlimited".
-  #
-  quota      = maildir:Sympl mailbox quota
-  quota_rule = ?:storage=0
-  quota_grace = 0%%
-

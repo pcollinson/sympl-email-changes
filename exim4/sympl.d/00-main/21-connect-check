@@ -14,4 +14,4 @@ hostlist   whitelist_connection_check = ${if exists{ETC_DIR/exim4/whitelist_conn
 
 # nftfw database check incident threshold
 # see 10-acl/10-acl-check-connect/30-check-nftfw-db
-NFTFW_INCIDENT_THRESHOLD = 10
+#NFTFW_INCIDENT_THRESHOLD = 10

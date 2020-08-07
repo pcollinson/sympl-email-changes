@@ -1,4 +1,0 @@
-  #
-  # Auto-subscribe to new mailboxes
-  #
-  lda_mailbox_autosubscribe = yes

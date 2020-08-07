@@ -1,7 +1,0 @@
-  #
-  # Used by both the Sieve plugin and the ManageSieve protocol.  This is the
-  # *default* value, and overridden in Sympl by the values returned from the
-  # dict proxy.
-  #
-  sieve      = file:~/sieve;active=~/sieve.d
-

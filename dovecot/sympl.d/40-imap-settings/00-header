@@ -1,6 +1,0 @@
-##
-## IMAP specific settings
-##
-
-protocol imap {
-
