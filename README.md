@@ -1,22 +1,36 @@
-# sympl-email-changes - changes to Sympl buster email installation
+# sympl-email-changes - changes to Sympl bullseye email installation
 
-This repository contains the changes I make to the ```exim4``` and ```dovecot``` installations on Sympl for Buster. My intention is to provide a better signature of malicious activity in log files, so the firewall generation system can pick up bad IPs and do something about them. The setup has been running for some years on a Symbiosis system and helps to pick up attempts at exhaustive password decryption amongst other things. My intention here is to allow you to understand what the changes do, and also to allow you to skip a step, if you don't think that it is necessary for you.
+This repository contains the changes I make to the ```exim4``` and ```dovecot``` installations on Sympl for Bullseye. My intention is to provide a better signature of malicious activity in log files, so the firewall generation system can pick up bad IPs and do something about them. The setup has been running for some years on a Sympl system and helps to pick up attempts at exhaustive password decryption amongst other things. My intention here is to allow you to understand what the changes do, and also to allow you to skip a step, if you don't think that it is necessary for you.
 
-The original release of these files contained all the files from the Sympl distribution, I think that this was a mistake and have cut things back so that it contains only the files needed for installation. This release comes with an installation script [Install.sh](Install.sh) that when run will automatically inject the files into your Sympl system having backed up your original files.
+The original release of these files contained all the files from the Sympl distribution, I think that this was a mistake and have cut things back so that it contains only the files needed for installation. This release comes with an installation script [Install.sh](Install.sh) that when run will automatically inject the files into your Sympl system. The script is safe to run more than once on the same installaton.
 
 To use the ```Install.sh```, copy the [Autoinstall.default](Autoinstall.default) to Autoinstall.conf. This file is also a shell script, setting values for the installation script to choose the parts of the distribution for installation. Also, for some changes, you need to edit in some tailoring values. Mostly the distribution adds new files to augment the installations, there are a few cases where  files need editing or replacing. ```Autoinstall.conf``` is ignored by ```git``` so will be kept on any subsequent ```git pull``` command.
 
-Changes all affect files in the ```sympl.d``` directory in ```/etc/dovecot``` or ```/etc/exim4```. Run the install script, then run move to the relevant directory and use```make``` to install the alterations.
+This release also handles the preservation of the original distribution somewhat differently than the previous version. The release initially copies all the files from the ```sympl.d``` directory into ```sympl-local.d```, and then changes the ```Makefile``` in the ```exim4``` and ```dovecot``` directories to use these new directories as the basis for creating the actual configuration files. Two new makefiles are created: ```Makefile.sympl``` for the distributed system, and ```Makefile.local``` for the edited installation. The ```Makefile``` is then a symbolic link to the chosen installation, so a ```make``` command will create the actual configuration. A new Python script, ```makefilecheck```, is used to manage the Makefiles. The script has a ```-h``` option which shows the commands that the script understands and their action.
 
-## Pre-install backups
+The new layout makes it easy to switch between configurations, and also allows for the ```sympl.d``` directories to be updated without possible damage to the running installation. The file ```/etc/dovecot/sympl.d/10.main/60.sni``` is automatically updated by a sympl subsystem, and recreated as a symbolic link in ```sympl-local.d/10.main``` so the automatic update still works.
 
-The Install.sh script will make backups of your hopefully vanilla ```/etc/dovecot/sympl.d``` and ```/etc/exim4/sympl.d``` so you can backtrack. When run, the script creates a gzipped tar file in both directories called ```sympl.d.backup.tar.gz``` if the tar file doesn't exist. To recover the original setup, change into the directory and run:
+### How to install the release
+
+Please note that this release is specifically for the Sympl system running on Bullseye.
+
+Download the files into a suitable directory. The easiest way to do this is:
 
 ``` sh
-$ sudo tar xfz sympl.d.backup.tar.gz
+git clone https://github.com/pcollinson/sympl-email-changes
+```
+which will create a directory ```symple-email-changes```. Change into the directory and
+copy ```Autoinstall.default``` to ```Autoinstall.conf```. Edit the new file to reflect the changes you want to use. Then run
+
+``` sh
+sudo sh Install.sh
 ```
 
-which will create a new directory called ```sympl.d.backup```.  If you just need to check what was there before, you can now look. If you want to go back, remove the ```sympl.d``` directory, and rename the backup to ```sympl.d``` in place. Use ```make``` to re-install.
+After you have done, you need to go to ```/etc/exim4``` and ```/etc/dovecot``` and run
+
+``` sh
+sudo make
+```
 
 ## Dovecot - ch1 - Add authentication logging
 
@@ -34,7 +48,7 @@ is needed. I've raided the standard distribution to place all the authorisation 
 
 ## Dovecot - ch2 - Add private ports for imap
 
-My machine is not public, in the sense that there are a small number of users who are easily told how to access the services. It's good to move the standard imap ports to somewhere else helping to defeat robot hack attempts from script-kiddies. I remove pop access from the firewall, but you can add a similar setup for pop if you need it. If you are using ```roundcube``` then the standard ports need to be available, but only need to be active for ```localhost```. The control file is missing from the standard Sympl distribution and I include it here. To set it up, you need to edit the port numbers in Autoinstall.conf variables:
+My machine is not public, in the sense that there are a small number of users who are easily told how to access the services. It's good to move the standard imap ports to somewhere else helping to defeat robot hack attempts from script-kiddies. I remove pop access using the firewall, but you can add a similar setup for pop if you need it. If you are using ```roundcube``` then the standard ports need to be available, but only need to be active for ```localhost```. The control file is missing from the standard Sympl distribution and I include it here. To set it up, you need to edit the port numbers in Autoinstall.conf variables:
 
 ``` sh
 AUTO_IMAP_PORT=
@@ -100,7 +114,7 @@ To invoke the new list, there's a new file in the connect ACL and contains a rul
 
 ## Exim - ch6 - Use the Sympl/Symbiosis/Nftfw firewall database to block IPs
 
-One of the things lacking in the Symbiosis firewall (used by Sympl 9) is the lack of feedback into the firewall about sites coming back and trying again. In my experience, sites come back again and again, often over long periods, and we want to block them. The firewalls will remove inactive IPs from active blocking after some number of days, but will keep the IP address for a longer period. This new file looks up the IP in the sqlite3 database managed by the firewall, and blocks known bad IPs whose transgression count is over some threshold with:
+One of the things lacking in the Symbiosis firewall (used by Sympl 9) is the lack of feedback into the firewall about sites coming back and trying again. In my experience, sites come back again and again, often over long periods, and I want to block them. The firewalls will remove inactive IPs from active blocking after some number of days, but will keep the IP address for a longer period. This new file looks up the IP in the sqlite3 database managed by the firewall, and blocks known bad IPs whose transgression count is over some threshold with:
 
 ``` sh
 Blacklisted: Denied access - history of unwanted activity
@@ -144,7 +158,7 @@ which can be set to ```nftfw``` or ```sympl```.  If it's empty, the script will 
 
 ## Exim - ch7 - Ratelimiting connections
 
-Exim can ratelimit connections, and generally the only sites that 'legally' send mail very quickly at your machine are known relays, and we've carefully excluded them from these checks. The others are usually spammers or exhaustive decrypters that connect at full bore. The ratelimit provided by this rule doesn't block transgressors, so legal email sites will pick up and start again. It's not that draconian - 10 messages every 15 minutes. It's worth doing, because it generally gives the firewall scanning code time to evaluate the nastiness of the connection, so often when the nasties return they are blocked.
+Exim can ratelimit connections, and generally the only sites that 'legally' send mail very quickly at your machine are known relays, and we've carefully excluded them from these checks. The others are usually spammers or exhaustive decrypters that connect at full bore. The ratelimit provided by this rule doesn't block transgressors, so legal email sites will pick up and start again. It's not that draconian - 10 messages every 15 minutes. It's worth doing, because it generally gives the firewall scanning code time to evaluate the nastiness of the connection, so often when the nasties return they are blocked. The file also logs rates for all-comers, if you don't want this you can comment it out, see the control file.
 
 The new file is:
 
@@ -161,7 +175,7 @@ bl.spamcop.org
 ```
 so they are optional. Spamcop doesn't seem to support IPv6 addresses so these are excluded from that lookup.
 
-Theo new file is in the check_rcpt ACL:
+The new file is in the check_rcpt ACL:
 
 - [exim4/sympl.d/10-acl/50-acl-check-rcpt/76-dns-blacklists](./exim4/sympl.d/10-acl/50-acl-check-rcpt/76-dns-blacklists)
 
@@ -201,6 +215,14 @@ AUTO_SPAMHAUS_DB_KEY=
 ```
 to the value of your key. If there is no key, ```Exim4``` will ignore the rules needing a Spamhaus key installed in ```75-dns-blacklists```.
 
+## Exim - ch11 - Stop annoying 'no IP address found for host no_matching_hosts' error message
+
+The SMTP protocol has a option ```AUTH``` that tells the incoming client that authorisation is needed. Exim will suppress the command for TCP connections from the local machine, and also for remote connections that have not connected using encryption. While doing this, it creates a list containing the domain name of the incoming machine. Later on, this list is expanded to an IP address. By default, the standard distribution uses ```no_matching_hosts``` as this name when the incoming connection is not using encryption, and the converson of this string to an IP address always fails, giving rise to the error message.
+
+This change replaces ```no_matching_hosts``` by ```localhost```, so the lookup succeeds, but doesn't match the incoming IP address, so the caller is not given the ```AUTH``` option.
+
+The change is made by editing of the control file.
+
 ## Finally
 
-These changes are well tried and tested over some couple of years on a Symbiosis system and at the time of writing with three months on a Sympl system. The rules will make your email system more robust, containing new features and providing information to your firewall to detect and block spammers.
+These changes are well tried and tested over a couple of years on a Symbiosis system and at the time of writing with several years on a Sympl system. The rules will make your email system more robust, containing new features and providing information to your firewall to detect and block spammers.

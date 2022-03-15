@@ -1,3 +1,18 @@
+v3.0.0	Make a branch to hold old Buster files - called Buster. The Master
+	now is aimed at Bullseye.
+
+	Change the way that modifications to the distributed files are
+	installed. This package now copies all the sympl.d files into
+	sympl-local.d, and the changes files in sympl-local.d. The package
+	is activated using the Makefile in /etc/dovecot and /etc/exim4,
+	which becomes a link to either Makefile.sympl or Makefile.local.
+	The command makefilecheck manages the switch between the revised
+	and distributed systems. It's now easy to switch between the two
+	installations and also to completely remove this set of updates.
+
+	There are small changes to the configuration installed by the
+	package and things are now somewhat better commented.
+
 v2.0.0	Remove files not used by this installation, leaving only the files
 	that are needed.
 	Add Install.sh script to automatically install the files, having

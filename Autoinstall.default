@@ -6,6 +6,10 @@
 # You can edit the values below to choose which files to install
 # To remove an option change the relevant AUTO_CH value to N
 #
+# NB In the previous version a set of test files could be written
+# in /tmp. This is no longer necessary because all files changed here
+# are written into /etc/exim4/sympl-local.d and /etc/dovecot/sympl-local.d
+#
 # Autoinstall.conf is ignored by git, so will not impact on any future
 # pull requests.
 #
@@ -49,7 +53,8 @@ AUTO_CH6=Y
 # depending on which firewall system you are using
 # if this is not defined, the script will look for the system
 # you are using in the following order
-# nftfw - if /etc/nftfw/config.ini or /usr/local/etc/nftfw/config.ini  exists
+# nftfw - if /etc/nftfw/config.ini or /var/lib/nftfw/firewall.db  exists
+# nftfw - if /usr/local/etc/nftfw/config.ini or /usr/local//var/lib/nftfw/firewall.db  exists
 # sympl - if /var/lib/sympl/firewall-blacklist-count.db exists
 # symbiosis - if /var/lib/symbiosis/firewall-blacklist-count.db exists
 AUTO_CH6_DATABASE=
@@ -82,19 +87,13 @@ AUTO_CH10=Y
 # and insert your key here
 AUTO_SPAMHAUS_DB_KEY=
 
-# To test the install script, creating a changed set of files
-# in /tmp/etc - set AUTO_TEST to Y
-AUTO_TEST=N
-# Create testing files
-# Set to N on non-Sympl systems when test files need to be made by hand
-# because the files don't exist in /etc
-AUTO_TEST_CREATE=Y
-# change the base for the test files if needed
-AUTO_TEST_BASE=/tmp
+# Change 11: Exim
+# Stop annoying no IP for no_matching_hosts error
+AUTO_CH11=Y
 
 # Version for Autoinstall - don't change this
 # it's used by Install to cope with future changes
-AUTO_VERSION=1
+AUTO_VERSION=2
 
 # Do not remove this line
-export AUTO_CH1 AUTO_CH2 AUTO_IMAP_PORT AUTO_IMAPS_PORT AUTO_CH3 AUTO_CH4 AUTO_CH5 AUTO_CH6 AUTO_CH6_DATABASE AUTO_CH7 AUTO_CH8 AUTO_CH9 AUTO_CH10 AUTO_SPAMHAUS_DB_KEY AUTO_TEST AUTO_TEST_CREATE AUTO_TEST_BASE AUTO_VERSION
+export AUTO_CH1 AUTO_CH2 AUTO_IMAP_PORT AUTO_IMAPS_PORT AUTO_CH3 AUTO_CH4 AUTO_CH5 AUTO_CH6 AUTO_CH6_DATABASE AUTO_CH7 AUTO_CH8 AUTO_CH9 AUTO_CH10 AUTO_CH11 AUTO_SPAMHAUS_DB_KEY AUTO_VERSION

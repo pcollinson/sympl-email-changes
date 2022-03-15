@@ -1,0 +1,17 @@
+Testing exim4 mail using the command line
+
+exim4 -oMi IPADDRESS.25 -bh TEST_IPADDRESS
+
+will run a fake SMTP conversation.
+
+IPADDRESS.26 is where to find the server, usually 127.0.0.1:25
+TEST_IPADDRESS is where you want to pretend to be coming from
+
+Commands are
+
+HELO hostname
+MAIL FROM: <user@domain>
+RCPT TO: <sender@domain>
+DATA
+
+end mail with a .

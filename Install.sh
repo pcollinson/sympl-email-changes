@@ -7,6 +7,15 @@
 # Autoinstall.conf is ignored by git, so will not impact on any future
 # pull requests.
 #
+# There is a a new safety strategy.
+# New versions of dovecot/sympl.d and exim4/sympl.d are created in sympl-local.d
+# and this is used to compile the configuration
+# A python3 program is used to manage the makefiles, and can also be used to
+# revert to the original installation
+# Type
+# sudo ./makefilecheck to run this
+# the using -h prints some help information
+
 if [ "$ZSH_VERSION" != "" ]; then
    emulate -L sh
 fi
@@ -17,7 +26,13 @@ if [ ${iam} != 'root' ]; then
     exit 1
 fi
 #
-CURRENT_AUTO_VERSION=1
+CURRENT_AUTO_VERSION=2
+# we need to be on Bullseye
+release=$(lsb_release -a 2> /dev/null | awk '/Release/ { print($2) }')
+if [ "$release" -lt 11 ]; then
+   echo "This command is intended to run only on the Debian Bullseye"
+   exit 0
+fi
 # Check for Autoinstall.conf
 if [ ! -f Autoinstall.conf ]; then
     echo "Copy Autoinstall.default to Autoinstall.conf control this script"
@@ -38,78 +53,71 @@ else
 	exit 0
     fi
 fi
-# Looging and errors
+# Logging and errors
 log() {
     echo "$@"
 }
 error() {
     echo '****' "$@"
 }
-# backup original files in sympl.d
-# Create a backup file called sympl.d.backup.tar.gz
-# containing the directory contents
-# Called with path to directory to work in
-backup() {
-    # work in a subshell to allow chdir
-    (
-	cd $1
-	log "Backup $1/sympl.d"
-	if [ ! -d sympl.d ]; then
-	    error "Cannot find $1/sympl.d"
-	elif [ -f sympl.d.backup.tar.gz ]; then
-	    log "Backup not needed - file exists in $1"
-	elif [ -d sympl.d.backup ]; then
-	    error "Backup directory sympl.d.backup exists in $1"
-	elif [ -h sympl.d.backup ]; then
-	    error "Symbolic link sympl.d.backup exists in $1"
-	else
-	    ln -s sympl.d sympl.d.backup
-	    tar cfhz sympl.d.backup.tar.gz sympl.d.backup
-	    rm sympl.d.backup
-	    log "Created backup of sympl.d in $1/sympl.d.backup.tar.gz"
-	    log "When unpacked will create a new directory sympl.d.backup"
-        fi
-    )
-}
 
-# Create a testing environment
-createtest() {
-    CURRENT=$(pwd)
-    BASE=$1
-    mkdir $BASE/etc
-    mkdir $BASE/etc/exim4 $BASE/etc/dovecot
-    # copy current files
-    cd /etc/dovecot
-    tar cf - sympl.d | (cd $BASE/etc/dovecot && tar xf -)
-    cd /etc/exim4
-    tar cf - sympl.d | (cd $BASE/etc/exim4 && tar xf -)
+# clone a directory name.d to name-local.d
+# args are full paths of source and dest
+clonedir() {
+
+    SRC=$1
+    DST=$2
+    CURRENT=$PWD
+    if [ ! -d $DST ]; then
+	mkdir $DST
+	chown --reference $SRC $DST
+    fi
+    # now this is a little tricky
+    # we need to get into the src directory
+    # create a tar this seems to be the best way
+    # not sure what you cannot use a subshell for the
+    # first branch
+    sh -c "cd $SRC; tar cf - ." | (cd $DST; tar xfp -)
     cd $CURRENT
 }
+# replace files in a sympl-local.d directory with
+# a symlink to the sympl.d directory
+set_symlink() {
+    # $1 is the path in etc to the base
+    # $2 is the path relative to that
+    # $3 is the file
+    APP=$1
+    DIR=$2
+    FILE=$3
 
-if [ "$AUTO_TEST" = 'Y' ]; then
-    if [ ! -d $AUTO_TEST_BASE/etc ]; then
-	if [ "$AUTO_TEST_CREATE" = 'Y' -a -d /etc/dovecot/sympl.d -a -d /etc/exim4/sympl.d ]; then
-	    createtest $AUTO_TEST_BASE
-	else
-	    error "Not a Sympl system, need testing files - please create them"
-	    exit
-	fi
+    LOCALFILE=${APP}/sympl-local.d/${DIR}/${FILE}
+    SYMPLFILE=${APP}/sympl.d/${DIR}/${FILE}
+    if [ ! -L "$LOCALFILE" ]; then
+	rm -f $LOCALFILE
+	ln -s $SYMPLFILE $LOCALFILE
     fi
-    TESTING=$AUTO_TEST_BASE
-fi
+}
 
-if [ ! -d $TESTING/etc/dovecot/sympl.d ]; then
-   error Cannot find $TESTING/etc/dovecot/sympl.d
+modifyMakefiles() {
+    sh makefilefilecheck local
+    log "Running make to rebuild the configurations in /etc/dovecot or "
+    log "/etc/exim4 will now use new amended sympl-local.d files."
+    log "This allows system updates to change log files in "
+    log "/etc/dovecot/sympl.d or /etc/exim4/sympl.d without impacting"
+    log "changes made here. However system update may change the Makefiles too."
+    log "Run the script: sudo makefilecheck to check and set the state of"
+    log "the Makefiles. The -j option provides some information on the arguments"
+    log "to the scripts."
+}
+
+if [ ! -d /etc/dovecot/sympl.d ]; then
+   error Cannot find /etc/dovecot/sympl.d
    exit
 fi
-if [ ! -d $TESTING/etc/exim4/sympl.d ]; then
-   error Cannot find $TESTING/etc/exim4/sympl.d
+if [ ! -d /etc/exim4/sympl.d ]; then
+   error Cannot find /etc/exim4/sympl.d
    exit
 fi
-
-# Backup original sympl.d contents
-backup $TESTING/etc/dovecot
-backup $TESTING/etc/exim4
 
 # Sources
 DOVESRC=dovecot/sympl.d
@@ -122,9 +130,20 @@ do
 	exit 1
     fi
 done
+# clone files into the new local directories
+if [ ! -d /etc/dovecot/sympl-local.d ]; then
+    clonedir /etc/dovecot/sympl.d /etc/dovecot/sympl-local.d
+fi
+if [ ! -d /etc/exim4/sympl-local.d ]; then
+    clonedir /etc/exim4/sympl.d /etc/exim4/sympl-local.d
+fi
+# sympl writes information into
+# /etc/dovecot/sympl.d/10-main/60-sni
+set_symlink /etc/dovecot 10-main 60-sni
+
 # Destinations
-DOVECOT=$TESTING/etc/dovecot/sympl.d
-EXIM=$TESTING/etc/exim4/sympl.d
+DOVECOT=/etc/dovecot/sympl-local.d
+EXIM=/etc/exim4/sympl-local.d
 for dest in $DOVECOT $EXIM
 do
      if [ ! -d $dest ]; then
@@ -251,11 +270,21 @@ if [ "$AUTO_CH6" = 'Y' ]; then
     else
 	symbiosisdb=/var/lib/symbiosis/firewall-blacklist-count.db
 	sympldb=/var/lib/sympl/firewall-blacklist-count.db
-	nftfwlocal=/usr/local/etc/nftfw/config.ini
-	nftfwroot=/etc/nftfw/config.ini
+	# Check on nftfw
+	# look for config files AND the firewall.db
+	# because the firewall.db may not be created yet
+	NFTFW_DB=""
 	if [ "$AUTO_CH6_DATABASE" = "" ]; then
-	    if [ -f $nftfwlocal -o -f $nftfwroot ]; then
+	    rootd=/
+	    vard=/usr/local/
+	    nconf=etc/nftfw/config.ini
+	    nwall=var/lib/nftfw/firewall.db
+	    if [ -f $rootd$nconf -o -f $rootd$nwall} ]; then
 		AUTO_CH6_DATABASE=nftfw
+		NFTFW_DB=$rootd$nwall
+	    elif [ -f $vard$nconf -o -f $vard$nwall ]; then
+		AUTO_CH6_DATABASE=nftfw
+		NFTFW_DB=$vard$nwall
 	    elif [ -f $sympldb ]; then
 		AUTO_CH6_DATABASE=sympl
 	    elif [ -f $symbiosisdb ]; then
@@ -268,10 +297,12 @@ if [ "$AUTO_CH6" = 'Y' ]; then
 	    append=""
 	    case "$AUTO_CH6_DATABASE" in
 		nftfw)
-		    append='# nftfw database check incident threshold
+		    append="# nftfw database check incident threshold
 # see 10-acl/10-acl-check-connect/30-check-nftfw-db
 NFTFW_INCIDENT_THRESHOLD = 10
-'
+# Location of the database
+NFTFW_DB = $NFTFW_DB
+"
 		    ;;
 		sympl)
 		    append='# Sympl database check incident threshold
@@ -315,4 +346,25 @@ if [ "$AUTO_CH10" = 'Y' ]; then
        log "Spamhaus key added to $EXIM/00-main/35-spamhaus-key"
     fi
 fi
+if [ "$AUTO_CH11" = 'Y' ]; then
+    # Another change to 50-tls-options
+    # replace
+    # auth_advertise_hosts = localhost : ${if eq{$tls_cipher}{}{no_matching_hosts}{*}}
+    # by
+    # auth_advertise_hosts = localhost : ${if eq{$tls_cipher}{}{localhost}{*}}    
+    srcfile=$EXIM/00-main/50-tls-options
+    isunset=$(grep '^auth_advertise_hosts = localhost : ${if eq{$tls_cipher}{}{no_matching_hosts}.*' ${srcfile})
+    if [ "$isunset" != '' ]; then
+	sed -i -e '/^auth_advertise_hosts = /s/no_matching_hosts/localhost/' ${srcfile}
+	if [ "$?" -eq 0 ]; then
+	    log "${srcfile} edit completed"
+	else
+	    error "${srcfile} edit failed"
+	fi
+    else
+	log "Edit to $srcfile not needed"
+    fi
+fi
 log "Installation complete"
+log "Running makefilecheck to establish correct settings for the makefiles."
+./makefilecheck local

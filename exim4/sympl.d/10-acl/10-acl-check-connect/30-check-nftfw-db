@@ -5,14 +5,14 @@
   # a count of all the incidents that have been discovered
   #
 
-  # Note on threshold for incident count 
+  # Note on threshold for incident count
   # see 00-main/21-connect-check
- 
+
   # ipv4 addresses are in the database 'as-is'
   deny  message = Blacklisted: Denied access - history of unwanted activity
 	condition = ${if isip4{$sender_host_address}{true}{false}}
 	# perform lookup, return 0 on failure
-	set acl_m9 = ${lookup sqlite {/usr/local/var/lib/nftfw/firewall.db \
+	set acl_m9 = ${lookup sqlite {NFTFW_DB \
 	                select matchcount from blacklist where ip = '$sender_host_address'; } \
 		        {$value} {0} }
 	condition = ${if >{$acl_m9}{NFTFW_INCIDENT_THRESHOLD} }
@@ -33,7 +33,7 @@
 	# lose the second half of the address
 	set acl_m9 = ${sg {$acl_m9}{\N^([0-9a-f]{0,4}:[0-9a-f]{0,4}:[0-9a-f]{0,4}:[0-9a-f]{0,4}:)(?:.*)$\N}{\$1}}
 	# perform lookup, return 0 on failure
-	set acl_m9 = ${lookup sqlite {/usr/local/var/lib/nftfw/firewall.db \
+	set acl_m9 = ${lookup sqlite {NFTFW_DB \
 	                select matchcount from blacklist where ip like '${acl_m9}%'; } \
 		        {$value} {0} }
 	condition = ${if >{$acl_m9}{NFTFW_INCIDENT_THRESHOLD} }

@@ -3,4 +3,35 @@
   # Remove the setting in 00-main/50-tls-options
   # Set logging values
   # This improves picking up attempts to get logins
-  log_selector = +tls_sni +smtp_protocol_error
+
+  # Logging arguments are:
+  # 
+  # tls_sni: When a message is received over an encrypted connection, and
+  # the remote host provided the Server Name Indication extension, the SNI
+  # is added to the log line, preceded by SNI=.
+  # 
+  # smtp_protocol_error: A log line is written for every SMTP protocol
+  # error encountered. Exim does not have perfect detection of all
+  # protocol errors because of transmission delays and the use of
+  # pipelining. If PIPELINING has been advertised to a client, an Exim
+  # server assumes that the client will use it, and therefore it does not
+  # count “expected” errors (for example, RCPT received after rejecting
+  # MAIL) as protocol errors.
+  # 
+  # incoming_interface: The interface on which a message was received is
+  # added to the “<=” line as an IP address in square brackets, tagged by
+  # I= and followed by a colon and the port number. The local interface
+  # and port are also added to other SMTP log lines.
+  # 
+  # smtp_mailauth: A third subfield with the authenticated sender,
+  # colon-separated, is appended to the A= item for a message arrival or
+  # delivery log line, if an AUTH argument to the SMTP MAIL command was
+  # accepted or used.
+  # 
+  # This from https://www.exim.org/exim-html-current/doc/html/spec_html/ch-log_files.html
+
+  log_selector = +tls_sni +smtp_protocol_error +incoming_interface +smtp_mailauth
+
+  # In addition, suppress the annoying logging from the sympl test suite, the
+  # test suite is fine, the logs it generates are annoying.
+  hosts_connection_nolog = ::1

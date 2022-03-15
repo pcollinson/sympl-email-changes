@@ -1,0 +1,3 @@
+#!/bin/sh
+# Run the filecheck.py script
+exec python3 filecheck "$@"
