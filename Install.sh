@@ -1,4 +1,3 @@
-#!/bin/sh
 #
 # To use Install.sh,
 # copy Autoinstall.default file to Autoinstall.conf where it will be loaded
@@ -15,7 +14,8 @@
 # Type
 # sudo ./makefilecheck to run this
 # the using -h prints some help information
-
+# Store all errors to repeat at the end
+ALLERRS=
 if [ "$ZSH_VERSION" != "" ]; then
    emulate -L sh
 fi
@@ -26,11 +26,11 @@ if [ ${iam} != 'root' ]; then
     exit 1
 fi
 #
-CURRENT_AUTO_VERSION=2
-# we need to be on Bullseye
+CURRENT_AUTO_VERSION=3
+# we need to be on Bullseye or later
 release=$(lsb_release -a 2> /dev/null | awk '/Release/ { print($2) }')
 if [ "$release" -lt 11 ]; then
-   echo "This command is intended to run only on the Debian Bullseye"
+   echo "This command is intended to run only on the Debian Bullseye or later"
    exit 0
 fi
 # Check for Autoinstall.conf
@@ -59,6 +59,13 @@ log() {
 }
 error() {
     echo '****' "$@"
+    OUT=$(echo '****' "$@")
+    if [ "${ALLERRS}x" = "x" ]; then
+	ALLERRS="${OUT}"
+    else
+	ALLERRS="${ALLERRS}
+${OUT}"
+    fi
 }
 
 # clone a directory name.d to name-local.d
@@ -351,7 +358,7 @@ if [ "$AUTO_CH11" = 'Y' ]; then
     # replace
     # auth_advertise_hosts = localhost : ${if eq{$tls_cipher}{}{no_matching_hosts}{*}}
     # by
-    # auth_advertise_hosts = localhost : ${if eq{$tls_cipher}{}{localhost}{*}}    
+    # auth_advertise_hosts = localhost : ${if eq{$tls_cipher}{}{localhost}{*}}
     srcfile=$EXIM/00-main/50-tls-options
     isunset=$(grep '^auth_advertise_hosts = localhost : ${if eq{$tls_cipher}{}{no_matching_hosts}.*' ${srcfile})
     if [ "$isunset" != '' ]; then
@@ -365,6 +372,40 @@ if [ "$AUTO_CH11" = 'Y' ]; then
 	log "Edit to $srcfile not needed"
     fi
 fi
+if [ "$AUTO_CH12" = 'Y' ]; then
+    # Change to Connect ACL
+    # to block senders with no PTR
+    newexim 10-acl/10-acl-check-connect/21-check-sender-host-name
+fi
+if [ "$AUTO_CH13" = 'Y' ]; then
+    if [ "$AUTO_CH10" != 'Y' -a "$AUTO_SPAMHAUS_DB_KEY" != "" ]; then
+	error "Change CH13 is enabled and requires change CH10"
+	error "Installation of CH13 skipped"
+    else
+	# Change to Connect ACL
+	# DNSBL checks in Connect
+	newexim 00-main/22-dns-check-in-connect 10-acl/10-acl-check-connect/25-dnsbl-reject
+	# Allow setting of connection list in config file
+	if [ "${DNSBL_CHECK_IN_CONNECT}" != 'spamhaus : spamcop : barracuda' ]; then
+            dstfile=$EXIM/00-main/22-dns-check-in-connect
+	    sed -i -e 's/^DNSBL_CHECK_IN_CONNECT.*$/DNSBL_CHECK_IN_CONNECT = '${DNSBL_CHECK_IN_CONNECT}'/' $dstfile
+	    if [ "$?" -eq 0 ]; then
+		log "${dstfile} edit completed"
+	    else
+		error "${dstfile} edit failed"
+	    fi
+        fi
+    fi
+fi
+if [ "$AUTO_CH14" = 'Y' ]; then
+    # Accept mail from known local domains
+    newexim 10-acl/50-acl-check-rcpt/61-verify-local-sender
+fi
 log "Installation complete"
-log "Running makefilecheck to establish correct settings for the makefiles."
-./makefilecheck local
+if [ "${ALLERRS}x" != 'x' ]; then
+   echo "There were errors - repeated here:"
+   echo "$ALLERRS"
+else
+    log "Running makefilecheck to establish correct settings for the makefiles."
+    ./makefilecheck local
+fi

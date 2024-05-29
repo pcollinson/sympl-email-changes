@@ -13,6 +13,22 @@
 # Autoinstall.conf is ignored by git, so will not impact on any future
 # pull requests.
 #
+# *** WARNING
+# The script doesn't delete old files or undo any changes that may
+# have been made previously.
+# If you are removing changes that were previously installed
+# or moving to a new version whose config changes installed files
+# Save the current sets of files by running
+# mv sympl-local.d to sympl-local.d.old
+# in /etc/exim4 and /etc/dovecot
+# and run then the script to create files from current copies
+#
+# You can create trial config files by using
+# make exim4.conf.tmp
+# or
+# make dovecot-conf.tmp
+#
+# *** WARNING
 #
 # Change 1: Dovecot
 # Add Authentication Logging
@@ -73,7 +89,8 @@ AUTO_CH8=Y
 
 #
 # Change 9: Exim
-# Reject connections if there is no reverse PTR record for the IP
+# Reject connections in the RCPT ACL if there is no reverse PTR record for the IP
+# see Change 11 below
 AUTO_CH9=Y
 
 #
@@ -89,11 +106,35 @@ AUTO_SPAMHAUS_DB_KEY=
 
 # Change 11: Exim
 # Stop annoying no IP for no_matching_hosts error
-AUTO_CH11=Y
+# Not needed for Sympl
+AUTO_CH11=N
+
+#
+# Change 12: Exim (2024)
+# Reject connections in the CONNECT ACL if there is no reverse PTR record for the IP
+# you don't need AUTO_CH9 if you use this, but I've left it actioned
+# for backwards compatibility
+AUTO_CH12=Y
+
+#
+# Change 13: Exim (2024)
+# Reject connections in the CONNECT ACL if the IP address is flagged as
+# bad in a DNSBL. This needs AUTO_CH10 to set a Spamhaus Key
+#
+AUTO_CH13=Y
+# This is an exim4 list and is edited into the new control file
+# 00-main/22-dns-check-in-connect
+# NB you cannot alter the order of tests
+DNSBL_CHECK_IN_CONNECT='spamhaus : spamcop : barracuda'
+
+# Change 14: Exim (2024)
+# Accept email from known local domains in RCPT ACL
+# This avoids DNS and other checks for local senders
+AUTO_CH14=Y
 
 # Version for Autoinstall - don't change this
 # it's used by Install to cope with future changes
-AUTO_VERSION=2
+AUTO_VERSION=3
 
 # Do not remove this line
-export AUTO_CH1 AUTO_CH2 AUTO_IMAP_PORT AUTO_IMAPS_PORT AUTO_CH3 AUTO_CH4 AUTO_CH5 AUTO_CH6 AUTO_CH6_DATABASE AUTO_CH7 AUTO_CH8 AUTO_CH9 AUTO_CH10 AUTO_CH11 AUTO_SPAMHAUS_DB_KEY AUTO_VERSION
+export AUTO_CH1 AUTO_CH2 AUTO_IMAP_PORT AUTO_IMAPS_PORT AUTO_CH3 AUTO_CH4 AUTO_CH5 AUTO_CH6 AUTO_CH6_DATABASE AUTO_CH7 AUTO_CH8 AUTO_CH9 AUTO_CH10 AUTO_CH11 AUTO_SPAMHAUS_DB_KEY AUTO_CH12 AUTO_CH13 DNSBL_CHECK_IN_CONNECT AUTO_CH14 AUTO_VERSION

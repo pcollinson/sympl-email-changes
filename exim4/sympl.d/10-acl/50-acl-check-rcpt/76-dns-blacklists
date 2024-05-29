@@ -7,14 +7,14 @@
 			       {isip4{$sender_host_address}} \
 	  		       {exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/bl.spamcop.net}} \
                   	  }}
-          dnslists      = bl.spamcop.net
+          dnslists      = bl.spamcop.net=127.0.0.2
           message       = $sender_host_address is blacklisted at $dnslist_domain.\n\
                           Please see $dnslist_text
           log_message   = IP blacklisted at $dnslist_domain.
 
   deny    domains       = +vhost_domains
           condition     = ${if exists{VHOST_DIR/$domain/VHOST_CONFIG_DIR/blacklists/b.barracudacentral.org}}
-          dnslists      = b.barracudacentral.org
+          dnslists      = b.barracudacentral.org=127.0.0.2
           message       = $sender_host_address is blacklisted at $dnslist_domain.\n\
                           Please see $dnslist_text
           log_message   = IP blacklisted at $dnslist_domain.

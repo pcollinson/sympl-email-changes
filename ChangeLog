@@ -1,3 +1,14 @@
+v4.0.0	Add correct result checking for DNSBL lookups in
+	exim4/sympl.d/10-acl/50-check-rcpt/75-dns-blacklists
+	Also don't run original spamhaus lookups if a Spamhaus key is
+	defined
+	To stop collecting DNSBL IP addresses in the firewall:
+	    Add basic DNSBL checks against the IP address in the connect acl
+	    add a set of tests in 10-acl/10-acl-check-connect/25-dnsbl-reject, these are done
+	    for all inbound mail connects
+	    Can be turned off by commenting DNSBL_CHECK_IN_CONNECT macro defined in
+	    00-main/22-dns-check-in-connect which defaults to being defined
+
 v3.0.0	Make a branch to hold old Buster files - called Buster. The Master
 	now is aimed at Bullseye.
 

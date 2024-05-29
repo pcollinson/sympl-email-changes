@@ -1,0 +1,6 @@
+  #
+  # If we have a local sender, make sure we know them
+  #
+  deny sender_domains = +local_domains
+       ! verify	      = sender
+      

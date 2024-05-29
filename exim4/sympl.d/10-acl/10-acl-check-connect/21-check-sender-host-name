@@ -1,0 +1,11 @@
+  #
+  # This looks up the sender address in the DNS
+  # and will fail if nothing is registered for the PTR
+  # which is common with spammers. The test is actioned soon
+  # after the builtin hostname lookup from the IP address.
+  # The result is likely to be in a cache.
+  #
+  # Wise to only use this if running a local caching DNS server
+
+  deny !condition = ${lookup dnsdb{defer_never,ptr=$sender_host_address}{yes}}
+       message = No reverse DNS record found

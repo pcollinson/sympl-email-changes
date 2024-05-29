@@ -1,0 +1,5 @@
+# Action DNSBL_CHECK_IN_CONNECT
+# See 10-acl/10-acl-check-connect/25-dnsbl-reject
+# This is an Exim list, remove entries to stop checking that DNSBL
+# This does not set the order of the tests, it merely acts to include them
+DNSBL_CHECK_IN_CONNECT = spamhaus : spamcop : barracuda

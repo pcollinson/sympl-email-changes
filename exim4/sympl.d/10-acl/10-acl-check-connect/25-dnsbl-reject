@@ -1,0 +1,49 @@
+  # Check DNSBLs in connect
+  # This applies to all mail connections
+  # Our systems are being continously harrassed by
+  # sites using scripts to get passwords, or to see if
+  # accounts exist - the firewall is finding these and
+  # stopping them, but many of these sites are in
+  # DNSBL lists, and it seems more efficiuent to
+  # use them as a primary block in connect
+
+.ifdef DNSBL_CHECK_IN_CONNECT
+
+  # The name of the DNSBL needs to appear in the list from DNSBL_CHECK_IN_CONNECT
+
+  # Spamhaus - just use zen
+  # but cope with having a Spamhaus ID
+.ifdef SPAMHAUS_DQ_KEY
+
+  deny    condition     = ${if forany{DNSBL_CHECK_IN_CONNECT}{eqi{$item}{spamhaus}}{yes}{no}}
+	  dnslists      = SPAMHAUS_DQ_KEY.zen.dq.spamhaus.net=127.0.0.2,127.0.0.3,127.0.0.4,127.0.0.9,127.0.0.10,127.0.0.11
+          set acl_m_hit = ${substr{${strlen:SPAMHAUS_DQ_KEY.}}{$dnslist_domain}}
+          message       = $sender_host_address is blacklisted at $acl_m_hit.\n\
+                          Please see $dnslist_text
+          log_message   = Connect IP blacklisted at $acl_m_hit.
+.else
+   deny   condition     = ${if forany{DNSBL_CHECK_IN_CONNECT}{eqi{$item}{spamhaus}}{yes}{no}}
+	  dnslists      = zen.spamhaus.org=127.0.0.2,127.0.0.3,127.0.0.4,127.0.0.9,127.0.0.10,127.0.0.11
+   	  message       = $sender_host_address is blacklisted at $dnslist_domain.\n\
+           		   Please see $dnslist_text
+          log_message   = Connect IP blacklisted at $dnslist_domain.
+.endif
+
+  # Spamcop doesn't deal with ipv6 addresses
+  deny    condition     = ${if and{ \
+  	  		       {isip4{$sender_host_address}} \
+			       {forany{DNSBL_CHECK_IN_CONNECT}{eqi{$item}{spamcop}}} \
+			  } {yes}{no}}
+          dnslists      = bl.spamcop.net=127.0.0.2
+          message       = $sender_host_address is blacklisted at $dnslist_domain.\n\
+                          Please see $dnslist_text
+          log_message   = Connect IP blacklisted at $dnslist_domain.
+
+  # Barracuda
+  deny    condition     = ${if forany{DNSBL_CHECK_IN_CONNECT}{eqi{$item}{barracuda}}{yes}{no}}
+	  dnslists      = b.barracudacentral.org=127.0.0.2
+          message       = $sender_host_address is blacklisted at $dnslist_domain.\n\
+                          Please see $dnslist_text
+          log_message   = Connect IP blacklisted at $dnslist_domain.
+
+.endif

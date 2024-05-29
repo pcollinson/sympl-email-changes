@@ -1,18 +1,40 @@
-# sympl-email-changes - changes to Sympl bullseye email installation
+# sympl-email-changes - changes to Sympl bullseye (and later) email installation
 
-This repository contains the changes I make to the ```exim4``` and ```dovecot``` installations on Sympl for Bullseye. My intention is to provide a better signature of malicious activity in log files, so the firewall generation system can pick up bad IPs and do something about them. The setup has been running for some years on a Sympl system and helps to pick up attempts at exhaustive password decryption amongst other things. My intention here is to allow you to understand what the changes do, and also to allow you to skip a step, if you don't think that it is necessary for you.
+This repository contains the changes I make to the ```exim4``` and ```dovecot``` installations on Sympl for Bullseye and later. The original intention was to provide a better signature of malicious activity in log files, so the firewall generation system can pick up bad IPs and do something about them. Recently, I've felt that the system is insufficiently defensive, and have added some new tests to assist with rejecting known bad IPs early on in the SMTP conversation. The setup has been running for some years on a Sympl system and helps to pick up attempts at exhaustive password decryption amongst other things. My intention here is to allow you to understand what the changes do, and also to allow you to skip a step, if you don't think that it is necessary for you.
 
-The original release of these files contained all the files from the Sympl distribution, I think that this was a mistake and have cut things back so that it contains only the files needed for installation. This release comes with an installation script [Install.sh](Install.sh) that when run will automatically inject the files into your Sympl system. The script is safe to run more than once on the same installaton.
+The original release of these files contained all the files from the Sympl distribution, I think that this was a mistake and have cut things back so that it contains only the files needed for installation. This release comes with an installation script [Install.sh](Install.sh) that when run will automatically inject the files into a copy of your Sympl system. The original files remain untouched and reverting back to the base distribution is easy. The script is safe to run more than once on the same installation.
 
-To use the ```Install.sh```, copy the [Autoinstall.default](Autoinstall.default) to Autoinstall.conf. This file is also a shell script, setting values for the installation script to choose the parts of the distribution for installation. Also, for some changes, you need to edit in some tailoring values. Mostly the distribution adds new files to augment the installations, there are a few cases where  files need editing or replacing. ```Autoinstall.conf``` is ignored by ```git``` so will be kept on any subsequent ```git pull``` command.
+To use the ```Install.sh```, copy the [Autoinstall.default](Autoinstall.default) to Autoinstall.conf. This file is also a shell script, setting values for the installation script to choose the parts of the distribution for installation. Also, for some changes, you need to edit in some tailoring values. Mostly, the distribution adds new files to augment the existing installation, there are a few cases where  files need editing or replacing. ```Autoinstall.conf``` is ignored by ```git``` so will be kept on any subsequent ```git pull``` command.
 
-This release also handles the preservation of the original distribution somewhat differently than the previous version. The release initially copies all the files from the ```sympl.d``` directory into ```sympl-local.d```, and then changes the ```Makefile``` in the ```exim4``` and ```dovecot``` directories to use these new directories as the basis for creating the actual configuration files. Two new makefiles are created: ```Makefile.sympl``` for the distributed system, and ```Makefile.local``` for the edited installation. The ```Makefile``` is then a symbolic link to the chosen installation, so a ```make``` command will create the actual configuration. A new Python script, ```makefilecheck```, is used to manage the Makefiles. The script has a ```-h``` option which shows the commands that the script understands and their action.
+This release also handles the preservation of the original distribution somewhat differently than the previous version. The release initially copies all the files from the ```sympl.d``` directory into ```sympl-local.d```, and then changes the ```Makefile``` in the ```exim4``` and ```dovecot``` directories to use these new directories as the basis for creating the actual configuration files. Two new makefiles are created: ```Makefile.sympl``` for the distributed system, and ```Makefile.local``` for the edited installation. The ```Makefile``` is then a symbolic link to the chosen installation, so a ```make``` command will create the actual configuration. A Python script, ```makefilecheck``` is used to manage the Makefiles. The script has a ```-h``` option which shows the commands that the script understands and their action.
 
 The new layout makes it easy to switch between configurations, and also allows for the ```sympl.d``` directories to be updated without possible damage to the running installation. The file ```/etc/dovecot/sympl.d/10.main/60.sni``` is automatically updated by a sympl subsystem, and recreated as a symbolic link in ```sympl-local.d/10.main``` so the automatic update still works.
 
+### 2024 changes
+
+After some numbers of years using these changes, there are several things that are less than optimum with the approach of pushing all blocking into the firewall.
+
+* The firewall, quite reasonably, has to build up a history of unwanted behaviour for an IP before it will block it. So the miscreant site has a chance of doing what it wants to do for several iterations, and ```exim4``` has to detect and block any problem.
+
+* Most of the blocks in the standard set of configuration files are placed in the ```RCPT``` access control list. At this time in the SMTP conversation, all the information needed to see if this is a valid piece of inbound mail is present. However, part of that validation can be to check on any user ids and passwords, which happens before the ```RCPT``` command is received. So all of the sites wanting to look up user names and passwords will get confirmation of their failure (hopefully) before trying to send some mail. OK, they will only get a few attempts before the firewall will block them, but that few may be too many.
+
+* My firewall, [nftfw](https://nftfw.uk), detects failed password attempts in the mail logs and will block the IP address, limiting the number of attempts that one IP can use. After a small number of attempts, the IP address is loaded into the firewall and is blocked. The IP will continue to stay blocked while nftfw's blacklist scanner finds output from the kernel signalling that the IP has tried again to access the machine. If the IP doesn't attempt to connect, the IP address is moved from being on the active list, but is retained for quite a long period.
+
+* The firewall database of blocked IPs and their activity history had grown to over 4000 entries, of which around 650 were currently active blocked sites. Some of these IPs had been active for over a year. The daily activity of blocking IPs has increased dramatically since I last seriously looked at what was going on. There seem to be many robot sites pointing at my server. They relentlessly and fruitlessly keep trying to connect and were firewall blocked. Looking up these IPs showed that they were very nearly all known to one DNS blacklist or another. Basically what I was doing was slowly mirroring the DNSBL contents in my firewall.
+
+The solution seemed to be to move or replicate some of the checks currently in the ```RCPT``` ACL to earlier in the process.  The only viable candidate for the early checks is in the ```CONNECT``` ACL, because the ACLs that are invoked between the start of the conversation and the ```RCPT``` either don't allow active blocking is one of these, or are just don't run early enough.
+
+So the 2024 changes only need the IP of the connecting machine and:
+
+* Moves the test that uses a reverse lookup of the incoming IP and denies access if there is no associated name. This is a huge win, it's still the case that many bad connections are coming in from machines where there is no reverse PTR record available.
+
+* Sets up DNSBL tests for Spamhaus, Spamcop and Barracuda and deny access on any hit. These work for every connection to the mail system and don't seek permission from the existence of a Sympl control file placed in a server's config area. At this point in the conversation, the destination of the mail is unknown, so this selection cannot be made. The tests that are run can be selected from an Exim4 list.
+
+The result of the changes are spectacular.  I cleaned out the firewall database to reset things, and no unwanted authentication lookups are now happening.  I have blocked via the firewall a couple of IP's that are trying to connect relentlessly, for example several attempts every minute.
+
 ### How to install the release
 
-Please note that this release is specifically for the Sympl system running on Bullseye.
+Please note that this release is specifically for the Sympl system running on Bullseye and later.
 
 Download the files into a suitable directory. The easiest way to do this is:
 
@@ -20,7 +42,7 @@ Download the files into a suitable directory. The easiest way to do this is:
 git clone https://github.com/pcollinson/sympl-email-changes
 ```
 which will create a directory ```symple-email-changes```. Change into the directory and
-copy ```Autoinstall.default``` to ```Autoinstall.conf```. Edit the new file to reflect the changes you want to use. Then run
+copy ```Autoinstall.default``` to ```Autoinstall.conf```. Edit the new file to reflect the changes you want to use, the changes are all numbers and refer to section ids (e.g. ch5) in this document. Then run
 
 ``` sh
 sudo sh Install.sh
@@ -97,7 +119,7 @@ Again, the file is not directly installed by Install.sh, instead the script comm
 
 ## Exim - ch5 - Allow skipping of connect ip checking
 
-The next few changes put some work into the  access control list for connections to ```exim4```, so we will be turning away some IP addresses before they've said anything, and all we know about them is their IP address. We want to try to stop IPs that we know are bad from being able to verify users and exhaustively decrypt passwords. At one point I put checks for the IP in the various Blackhole lists in here, but that proved to be overkill, I was just slowly collecting copies of the blacklist  databases. However, the checks that follow do stop a lot of bad guys from getting near the mail system.
+The next few changes put some work into the  access control list for connections to ```exim4```, so we will be turning away some IP addresses before they've said anything, and all we know about them is their IP address. We want to try to stop IPs that we know are bad from being able to verify users and exhaustively decrypt passwords. However, the checks that follow do stop a lot of bad guys from getting near the mail system.
 
 We want to be able to overcome any checks that are in connect ACL, because all we know is an IP address. It's handy to have a whitelist specifically aimed at bypassing the new connection checking that's being added. This change uses a file in ```/etc/exim4``` called ```whitelist_connect_hosts```. If needed it contains a list of IP addresses that should not be blocked in the connect ACL but can be checked later.
 
@@ -114,7 +136,7 @@ To invoke the new list, there's a new file in the connect ACL and contains a rul
 
 ## Exim - ch6 - Use the Sympl/Symbiosis/Nftfw firewall database to block IPs
 
-One of the things lacking in the Symbiosis firewall (used by Sympl 9) is the lack of feedback into the firewall about sites coming back and trying again. In my experience, sites come back again and again, often over long periods, and I want to block them. The firewalls will remove inactive IPs from active blocking after some number of days, but will keep the IP address for a longer period. This new file looks up the IP in the sqlite3 database managed by the firewall, and blocks known bad IPs whose transgression count is over some threshold with:
+One of the things lacking in the Symbiosis firewall (used by Sympl) is the lack of feedback into the firewall about sites coming back and trying again. In my experience, sites come back again and again, often over long periods, and I want to block them. The firewalls will remove inactive IPs from active blocking after some number of days, but will keep the IP address for a longer period. This new file looks up the IP in the sqlite3 database managed by the firewall, and blocks known bad IPs whose transgression count is over some threshold with:
 
 ``` sh
 Blacklisted: Denied access - history of unwanted activity
@@ -182,7 +204,7 @@ The new file is in the check_rcpt ACL:
 
 ## Exim - ch9 - Reject connections if there is no reverse PTR record for the IP
 
-This is 'standard' for ```sendmail``` sites, and is a good way of rejecting spammers who often don't have a registered PTR record for their IP. It's probably wise to run a local caching nameserver to use this, but this seems wise to me anyway.
+This is 'standard' for ```sendmail``` sites, and is a good way of rejecting spammers who often don't have a registered PTR record for their IP. It's wise to run a local caching nameserver to use this, but this is a good idea anyway.
 
 The new file is:
 
@@ -190,7 +212,7 @@ The new file is:
 
 ## Exim - ch10 - Use Spamhaus Data Query Service for DNSBL lookups
 
-Spamhaus provide a better service if you sign up for an account. You will get a set of private lookup addresses for the account incorporating a personalised key, the addresses replaces the public lookups installed in the Sympl ```exim4``` ACL file. Spamhaus have rules for commercial use and if you qualify they expect you to pay. Incidentally, they do monitor usage and can withhold service if your site transgresses. The fee is not huge and is worth paying when you consider how useful their efforts are. They also provide free 'trial' accounts, see [their website](https://www.spamhaustech.com/free-trial/sign-up-for-a-free-data-query-service-account/), the page also explains the commercial rules. I recommend that you sign up.
+Spamhaus provide a better service if you sign up for an account. You will get a set of private lookup addresses for the account incorporating a personalised key, the addresses replaces the public lookups installed in the Sympl ```exim4``` ACL file. Spamhaus have rules for commercial use and if you qualify they expect you to pay. Incidentally, they do monitor usage and can withhold service if your site transgresses. The fee is not huge and is worth paying when you consider how useful their efforts are. They also provide free 'trial' accounts, see [their website](https://www.spamhaustech.com/free-trial/sign-up-for-a-free-data-query-service-account/), the page also explains the commercial rules. I recommend that you sign up. Since I stopped being commercial, my ID number is still in use, and it's free.
 
 This change provides two files enabling the use of these lookup addresses. ```35-spamhaus-key``` defines a macro for the key which is then used in the replacement file ```75-dns-blacklists``` to include the Spamhaus lookup rules. The new rules are added at the top of this file and are only seen by ```exim4``` when the key is defined. The rules are a clone of the original Spamhaus set with the changes made to use the new addresses. The key is suppressed in any log and message sent when a rule is triggered.
 
@@ -213,16 +235,58 @@ the file is installed with no key defined, but the key can be added automaticall
 ``` sh
 AUTO_SPAMHAUS_DB_KEY=
 ```
-to the value of your key. If there is no key, ```Exim4``` will ignore the rules needing a Spamhaus key installed in ```75-dns-blacklists```.
+to the value of your key. If there is no key, ```exim4``` will ignore the rules needing a Spamhaus key installed in ```75-dns-blacklists```.
 
 ## Exim - ch11 - Stop annoying 'no IP address found for host no_matching_hosts' error message
 
 The SMTP protocol has a option ```AUTH``` that tells the incoming client that authorisation is needed. Exim will suppress the command for TCP connections from the local machine, and also for remote connections that have not connected using encryption. While doing this, it creates a list containing the domain name of the incoming machine. Later on, this list is expanded to an IP address. By default, the standard distribution uses ```no_matching_hosts``` as this name when the incoming connection is not using encryption, and the converson of this string to an IP address always fails, giving rise to the error message.
 
+
 This change replaces ```no_matching_hosts``` by ```localhost```, so the lookup succeeds, but doesn't match the incoming IP address, so the caller is not given the ```AUTH``` option.
 
 The change is made by editing of the control file.
 
+The change is no longer needed in recent versions of Sympl, the change has been adopted into its code. It's now set to not be included by default in the configuration file.
+
+## Exim - ch12 - Reject connections in the Connect ACL if there is no reverse PTR record for the IP (added 2024)
+
+This is a direct copy of the contents of ch9, and drops connections if the IP address doesn't have a partner PTR record with a hostname. If you use this, you can disable the ch9 change. However, doing it twice is relatively free because ```exim4``` caches DNS lookups.
+
+Blocking access in this way is 'standard' for ```sendmail``` sites, and is a good way of rejecting spammers who often don't have a registered PTR record for their IP. It's wise to run a local caching nameserver to use this, but this is a good idea anyway.
+
+As I write, this rule is blocking 30% of sites being blocked in the Connect ACL.
+
+The new file is
+
+- [exim4/sympl.d/10-acl/10-acl-check-connect/21-check-sender-host-name](./exim4/sympl.d/10-acl/10-acl-check-connect/21-check-sender-host-name)
+
+## Exim - ch13 - Test IP addresses in the Connect ACL and reject if found (added 2024)
+
+This change adds three tests on the incoming IP address using Spamhaus, Spamcop and Barracuda. The connection is rejected if the IP address is found in the DNSBL. If you have a Spamhaus ID code and want to use it, ch10 must be enabled. Control files in the ```srv/example.domain/config/blacklists``` are not used to enable the tests. At the connect time in the SMTP conversation the information needed to select ```example.domain``` is not known. Instead a variable defined in ```00-main/22-dns-check-in-connect``` is used to select the tests that are done:
+
+``` sh
+DNSBL_CHECK_IN_CONNECT = spamhaus : spamcop : barracuda
+
+```
+This variable is an ```exim4``` list, and tests can be suppressed by removing one or more of the entries. The variable does not set the order of tests which are hard coded. This variable is also defined in the ```Autoinstall.conf```.
+
+The tests can skipped for nominated IPs by the whitelisting measures installed in ch5.
+
+Of course, if a connection proceeds to the ```RCPT``` ACL, the DNSBL tests will be done again. However, these should be relatively free because the DNS lookups are cached by ```exim4``` and also by the local DNS server.
+
+The new files are:
+
+- [exim4/sympl.d/00-main/22-dns-check-in-connect](./exim4/sympl.d/00-main/22-dns-check-in-connect)
+- [exim4/sympl.d/10-acl/10-acl-check-connect/25-dnsbl-reject](./exim4/sympl.d/10-acl/10-acl-check-connect/25-dnsbl-reject)
+
+## Exim - ch14 - If sender is a known local domain, skip further checking
+
+This change checks the sender domain of the mail against the list of local domains that ```exim4``` knows about. If there is a match, mail processing  will continue, skipping blacklist testing, DNSBL testing, spam and virus scanning.
+
+You might not want to enable this if you want to spam and virus check outbound mail on your server.
+
+I added this to my server in 2022, but it hasn't been integrated in this package until now.
+
 ## Finally
 
-These changes are well tried and tested over a couple of years on a Symbiosis system and at the time of writing with several years on a Sympl system. The rules will make your email system more robust, containing new features and providing information to your firewall to detect and block spammers.
+These changes are well tried and tested over a couple of years on a Symbiosis system and at the time of writing with several years on a Sympl system. The rules will make your email system more robust and considerably more defensive, containing new features that try harder to keep the bad guys away from your mail system.
