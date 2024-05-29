@@ -22,7 +22,7 @@ After some numbers of years using these changes, there are several things that a
 
 * The firewall database of blocked IPs and their activity history had grown to over 4000 entries, of which around 650 were currently active blocked sites. Some of these IPs had been active for over a year. The daily activity of blocking IPs has increased dramatically since I last seriously looked at what was going on. There seem to be many robot sites pointing at my server. They relentlessly and fruitlessly keep trying to connect and were firewall blocked. Looking up these IPs showed that they were very nearly all known to one DNS blacklist or another. Basically what I was doing was slowly mirroring the DNSBL contents in my firewall.
 
-The solution seemed to be to move or replicate some of the checks currently in the ```RCPT``` ACL to earlier in the process.  The only viable candidate for the early checks is in the ```CONNECT``` ACL, because the ACLs that are invoked between the start of the conversation and the ```RCPT``` either don't allow active blocking is one of these, or are just don't run early enough.
+The solution seemed to be to move or replicate some of the checks currently in the ```RCPT``` ACL to earlier in the process.  The only viable candidate for the early checks is in the ```CONNECT``` ACL, because the ACLs that are invoked between the start of the conversation and the ```RCPT``` either don't allow active blocking, or are just don't run early enough.
 
 So the 2024 changes only need the IP of the connecting machine and:
 
