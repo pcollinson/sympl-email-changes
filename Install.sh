@@ -375,7 +375,7 @@ fi
 if [ "$AUTO_CH12" = 'Y' ]; then
     # Change to Connect ACL
     # to block senders with no PTR
-    newexim 10-acl/10-acl-check-connect/21-check-sender-host-name
+    newexim 10-acl/10-acl-check-connect/27-check-sender-host-name
 fi
 if [ "$AUTO_CH13" = 'Y' ]; then
     if [ "$AUTO_CH10" != 'Y' -a "$AUTO_SPAMHAUS_DB_KEY" != "" ]; then

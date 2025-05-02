@@ -1,7 +1,7 @@
   #
-  # So this looks up the sender address in the DNS
+  # This looks up the sender address in the DNS
   # and will fail if nothing is registered for the PTR
-  # which is common with spammers
+  # which is common with spammers.
   #
   # Originally this used defer_never, however this setting
   # produces a complete ban if there are problems with the DNS

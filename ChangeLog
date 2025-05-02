@@ -1,6 +1,16 @@
+v4.1.0	Update README.md
+	Rename
+	exim4/sympl.d/10-acl/10-acl-check-connect/21-check-sender-host-name
+	to
+	exim4/sympl.d/10-acl/10-acl-check-connect/27-check-sender-host-name
+	Which places the reverse PTR check after the DNSBL lookups.
+	Also change the DNS lookup defer option to defer_strict to ignore
+	DNS lookup failure.
+	Make the same change to exim4/sympl.d/10-acl/50-acl-check-rcpt/77-check-sender-host-name
+
 v4.0.0	Add correct result checking for DNSBL lookups in
 	exim4/sympl.d/10-acl/50-check-rcpt/75-dns-blacklists
-	Also don't run original spamhaus lookups if a Spamhaus key is
+	Also don't run original spamhaus look ups if a Spamhaus key is
 	defined
 	To stop collecting DNSBL IP addresses in the firewall:
 	    Add basic DNSBL checks against the IP address in the connect acl

@@ -10,7 +10,7 @@ This release also handles the preservation of the original distribution somewhat
 
 The new layout makes it easy to switch between configurations, and also allows for the ```sympl.d``` directories to be updated without possible damage to the running installation. The file ```/etc/dovecot/sympl.d/10.main/60.sni``` is automatically updated by a sympl subsystem, and recreated as a symbolic link in ```sympl-local.d/10.main``` so the automatic update still works.
 
-### 2024 changes
+### 2024/2025 changes
 
 After some numbers of years using these changes, there are several things that are less than optimum with the approach of pushing all blocking into the firewall.
 
@@ -26,9 +26,11 @@ The solution seemed to be to move or replicate some of the checks currently in t
 
 So the 2024 changes only need the IP of the connecting machine and:
 
+* Sets up DNSBL tests for Spamhaus, Spamcop and Barracuda and deny access on any hit. These work for every connection to the mail system and don't seek permission from the existence of a Sympl control file placed in a server's config area. At this point in the conversation, the destination of the mail is unknown, so this selection cannot be made. The tests that are run can be selected from an Exim4 list.
+
 * Moves the test that uses a reverse lookup of the incoming IP and denies access if there is no associated name. This is a huge win, it's still the case that many bad connections are coming in from machines where there is no reverse PTR record available.
 
-* Sets up DNSBL tests for Spamhaus, Spamcop and Barracuda and deny access on any hit. These work for every connection to the mail system and don't seek permission from the existence of a Sympl control file placed in a server's config area. At this point in the conversation, the destination of the mail is unknown, so this selection cannot be made. The tests that are run can be selected from an Exim4 list.
+The order of these tests have been reversed in 2025. Most of the sites with no reverse IP are also in one of more DNSBLs, and it's useful to know this. The sites can be isolated and placed in the firewall if that seems a good idea.
 
 The result of the changes are spectacular.  I cleaned out the firewall database to reset things, and no unwanted authentication lookups are now happening.  I have blocked via the firewall a couple of IP's that are trying to connect relentlessly, for example several attempts every minute.
 
@@ -41,18 +43,41 @@ Download the files into a suitable directory. The easiest way to do this is:
 ``` sh
 git clone https://github.com/pcollinson/sympl-email-changes
 ```
-which will create a directory ```symple-email-changes```. Change into the directory and
+which will create a directory ```symple-email-changes```.  Change into the directory and
 copy ```Autoinstall.default``` to ```Autoinstall.conf```. Edit the new file to reflect the changes you want to use, the changes are all numbers and refer to section ids (e.g. ch5) in this document. Then run
 
 ``` sh
-sudo sh Install.sh
+sudo Install.sh
 ```
-
 After you have done, you need to go to ```/etc/exim4``` and ```/etc/dovecot``` and run
 
 ``` sh
 sudo make
 ```
+
+### How to update the release
+
+The ```Install.sh``` script expects to create the ```sympl-local.d``` directories in ```/etc/exim4``` and ```/etc/dovecot``` and populate them.
+
+If you are running the script again, move these directories to another name (perhaps ```sympl-local.d.old```) so you can revert if you need to. Then change into ```symple-email-changes``` and run the script.
+
+This will cope with any files that have been removed or possibly renamed in the new release. You'll also need to do this if files in the Sympl release are updated.
+
+You can find what's changed by using:
+``` sh
+sudo diff -r sympl-local.d.old sympl-local.d
+```
+in the appropriate directory.
+
+With the all the files installed, you can revert to the standard Sympl release by using
+``` sh
+sudo makefilecheck sympl
+```
+and install it using
+``` sh
+sudo makefilecheck local
+```
+Basically this changes the Makefile for  exim and Dovecot to use the desired set of config files.
 
 ## Dovecot - ch1 - Add authentication logging
 
